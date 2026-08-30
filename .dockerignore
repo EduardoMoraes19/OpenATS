@@ -1,0 +1,16 @@
+.git
+.github
+**/node_modules
+**/.next
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+e2e
+docs-draft
+**/tests
+**/*.test.ts
+**/*.test.tsx
+playwright.config.ts
+setup-asgardeo.sh
+*.md

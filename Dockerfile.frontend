@@ -1,0 +1,61 @@
+# syntax=docker/dockerfile:1
+#
+# OpenATS frontend (Next.js App Router).
+#
+# NEXT_PUBLIC_* values are inlined into the client bundle at build time, not
+# read at runtime — so they arrive as build args. Changing any of them means
+# rebuilding the image, not just restarting the service.
+
+FROM node:22-slim AS base
+RUN corepack enable && corepack prepare pnpm@11.12.0 --activate
+WORKDIR /app
+ENV CI=1 NEXT_TELEMETRY_DISABLED=1
+
+# ---------- dependencies ----------
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY backend/package.json backend/package.json
+COPY frontend/package.json frontend/package.json
+RUN pnpm install --frozen-lockfile --filter ./frontend...
+
+# ---------- build ----------
+FROM deps AS build
+
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_ASGARDEO_BASE_URL
+ARG NEXT_PUBLIC_ASGARDEO_CLIENT_ID
+ARG NEXT_PUBLIC_ASGARDEO_SCOPES
+ARG NEXT_PUBLIC_ASGARDEO_SIGN_IN_URL
+
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    NEXT_PUBLIC_ASGARDEO_BASE_URL=$NEXT_PUBLIC_ASGARDEO_BASE_URL \
+    NEXT_PUBLIC_ASGARDEO_CLIENT_ID=$NEXT_PUBLIC_ASGARDEO_CLIENT_ID \
+    NEXT_PUBLIC_ASGARDEO_SCOPES=$NEXT_PUBLIC_ASGARDEO_SCOPES \
+    NEXT_PUBLIC_ASGARDEO_SIGN_IN_URL=$NEXT_PUBLIC_ASGARDEO_SIGN_IN_URL \
+    NODE_ENV=production
+
+COPY tsconfig.json ./
+COPY frontend ./frontend
+RUN pnpm --filter ./frontend build
+
+# ---------- runtime ----------
+FROM base AS runtime
+ENV NODE_ENV=production
+
+RUN groupadd -r app && useradd -r -g app app
+
+# `next start` is served from the full dependency tree: next.config.ts does not
+# set output:"standalone", and turning it on under a pnpm workspace needs
+# outputFileTracingRoot plus verification that nothing gets traced out. Worth
+# doing once the deploy is proven, not before.
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/frontend ./frontend
+COPY --from=build /app/package.json /app/pnpm-workspace.yaml ./
+
+USER app
+WORKDIR /app/frontend
+EXPOSE 3000
+
+CMD ["node_modules/.bin/next", "start", "--port", "3000", "--hostname", "0.0.0.0"]
