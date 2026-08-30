@@ -16,6 +16,12 @@ const envSchema = z.object({
   R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
   R2_PUBLIC_URL: z.string().min(1, "R2_PUBLIC_URL is required"),
 
+  // Host to sign resume URLs against, when it differs from R2_ENDPOINT — the
+  // case when storage is reached over a private network. Defaults to
+  // R2_ENDPOINT, which is what Cloudflare R2 wants.
+  R2_PUBLIC_ENDPOINT: z.string().optional(),
+  SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
   RESEND_FROM_EMAIL: z.string().min(1, "RESEND_FROM_EMAIL is required"),
 

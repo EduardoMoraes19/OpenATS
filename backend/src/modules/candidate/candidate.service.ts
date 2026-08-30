@@ -21,6 +21,7 @@ import type { Candidate } from "../../db/schema/candidates";
 import { assessmentExecutionService } from "../assessment-execution/assessment-execution.service";
 import { candidateActivityService } from "./candidate-activity.service";
 import { socketService } from "../../shared/services/socket.service";
+import { r2Service } from "../../shared/services/r2.service";
 import { rejectionService } from "../rejection/rejection.service";
 import { mailService } from "../../shared/services/mail.service";
 import { cleanObject as clean } from "../../utils/object.utils";
@@ -290,8 +291,17 @@ export const candidateService = {
         .where(where),
     ]);
 
+    // Signing is HMAC only — no round trip to storage — so doing it per row
+    // costs microseconds and keeps the stored URL out of the response.
+    const signedRows = await Promise.all(
+      rows.map(async (row) => ({
+        ...row,
+        resumeUrl: await r2Service.signUrl(row.resumeUrl),
+      })),
+    );
+
     return {
-      rows,
+      rows: signedRows,
       total: countRow?.count ?? 0,
       page,
       limit,
@@ -439,6 +449,7 @@ export const candidateService = {
 
     return {
       ...candidate,
+      resumeUrl: await r2Service.signUrl(candidate.resumeUrl),
       answers,
       selections,
       history,
