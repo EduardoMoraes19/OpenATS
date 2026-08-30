@@ -168,8 +168,19 @@ export const getCandidates = async (req: Request, res: Response) => {
     };
 
     const result = await candidateService.getAll(jobId, filters);
+
+    // Signed on the way out, never in the service: internal callers need the
+    // stored URL to derive the object key, and a signature would break that.
+    // Signing is HMAC only, so per-row costs microseconds.
+    const rows = await Promise.all(
+      result.rows.map(async (row) => ({
+        ...row,
+        resumeUrl: await r2Service.signUrl(row.resumeUrl),
+      })),
+    );
+
     res.status(200).json({
-      data: result.rows,
+      data: rows,
       pagination: {
         total: result.total,
         page: result.page,
@@ -215,7 +226,9 @@ export const getCandidateById = async (req: Request, res: Response) => {
       return;
     }
 
-    res.status(200).json({ data: result });
+    res.status(200).json({
+      data: { ...result, resumeUrl: await r2Service.signUrl(result.resumeUrl) },
+    });
   } catch (error) {
     logger.error(
       `Failed to fetch candidate id=${req.params.id}: ${getErrorMessage(error)}`,

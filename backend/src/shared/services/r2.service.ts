@@ -104,7 +104,11 @@ export const r2Service = {
     if (!base) return null;
     if (!fileUrl.startsWith(`${base}/`)) return null;
 
-    return fileUrl.replace(`${base}/`, "");
+    // Drop any query string: a signed URL carries its signature there, and
+    // leaving it on would yield a key that matches no object — a delete would
+    // then quietly do nothing.
+    const [path] = fileUrl.replace(`${base}/`, "").split("?");
+    return path ?? null;
   },
 
   /**
