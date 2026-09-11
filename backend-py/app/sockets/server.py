@@ -22,6 +22,7 @@ from app.logging import get_logger
 from app.settings import settings
 from app.shared.auth.job_access import can_access_candidate, can_access_job, parse_room_id
 from app.shared.auth.jwt_auth import AuthError, get_user_from_token
+from app.shared.schema import to_utc_iso_z
 
 logger = get_logger(__name__)
 
@@ -128,7 +129,7 @@ async def send_job_message(sid: str, payload: dict) -> None:
             "senderId": message.sender_id,
             "message": message.message,
             "replyToId": message.reply_to_id,
-            "sentAt": message.sent_at.isoformat(),
+            "sentAt": to_utc_iso_z(message.sent_at),
             "isSystemMessage": message.is_system_message,
             "isDeleted": message.is_deleted,
             "senderName": f"{sender.first_name} {sender.last_name}",
@@ -172,7 +173,7 @@ async def edit_job_message(sid: str, payload: dict) -> None:
             "senderId": message.sender_id,
             "message": message.message,
             "replyToId": message.reply_to_id,
-            "sentAt": message.sent_at.isoformat(),
+            "sentAt": to_utc_iso_z(message.sent_at),
             "isSystemMessage": message.is_system_message,
             "isDeleted": message.is_deleted,
             "senderName": f"{sender.first_name} {sender.last_name}",
@@ -234,7 +235,7 @@ async def send_candidate_message(sid: str, payload: dict) -> None:
             "senderId": message.sender_id,
             "message": message.message,
             "replyToId": message.reply_to_id,
-            "sentAt": message.sent_at.isoformat(),
+            "sentAt": to_utc_iso_z(message.sent_at),
             "isSystemMessage": message.is_system_message,
             "isDeleted": message.is_deleted,
         }
@@ -260,7 +261,7 @@ async def send_system_message_to_job(job_id: int, message: str) -> None:
             "senderId": row.sender_id,
             "message": row.message,
             "replyToId": row.reply_to_id,
-            "sentAt": row.sent_at.isoformat(),
+            "sentAt": to_utc_iso_z(row.sent_at),
             "isSystemMessage": row.is_system_message,
             "isDeleted": row.is_deleted,
         }
