@@ -35,7 +35,7 @@ export function InterviewsSection({
           <Button
             size="sm"
             onClick={onSchedule}
-            className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)]"
+            className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)]"
           >
             Schedule
           </Button>

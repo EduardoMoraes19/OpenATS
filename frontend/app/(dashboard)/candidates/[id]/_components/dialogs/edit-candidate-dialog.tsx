@@ -144,7 +144,7 @@ export function EditCandidateDialog({
           <Button
             onClick={onSave}
             disabled={isPending}
-            className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-white shadow-none transition-colors hover:bg-[var(--theme-color-hover)] disabled:opacity-60 cursor-pointer"
+            className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-[#121212] shadow-none transition-colors hover:bg-[var(--theme-color-hover)] disabled:opacity-60 cursor-pointer"
           >
             {isPending ? "Saving…" : "Save Changes"}
           </Button>

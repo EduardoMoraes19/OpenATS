@@ -76,7 +76,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={pending}
-            className="h-10 rounded-lg text-white font-semibold text-sm shadow-none border-none"
+            className="h-10 rounded-lg text-[#121212] font-semibold text-sm shadow-none border-none"
             style={{ backgroundColor: "var(--theme-color)" }}
           >
             {pending ? "Signing in…" : "Sign in"}

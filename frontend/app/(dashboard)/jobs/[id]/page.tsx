@@ -421,7 +421,7 @@ export default function JobDetailsPage() {
                       onClick={() => setActiveJobTab(value)}
                       className={`inline-flex h-[34px] shrink-0 cursor-pointer items-center gap-2 rounded-md border px-4 text-[14px] font-semibold leading-none transition-colors ${
                         activeJobTab === value
-                          ? "border-none bg-[var(--theme-color)] text-white shadow-none hover:bg-[var(--theme-color-hover)]"
+                          ? "border-none bg-[var(--theme-color)] text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)]"
                           : "border-none bg-neutral-100 text-slate-700 hover:bg-neutral-200 hover:text-slate-950 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white"
                       }`}
                     >

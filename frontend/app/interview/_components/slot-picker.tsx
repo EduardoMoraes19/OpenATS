@@ -189,7 +189,7 @@ export default function SlotPicker({ data, token, apiBase }: Props) {
                   <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--theme-color)]">
                     <HugeiconsIcon
                       icon={Tick02Icon}
-                      className="size-3 text-white"
+                      className="size-3 text-[#121212]"
                       strokeWidth={3}
                     />
                   </span>

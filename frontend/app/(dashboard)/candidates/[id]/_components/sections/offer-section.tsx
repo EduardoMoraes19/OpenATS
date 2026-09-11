@@ -242,7 +242,7 @@ export function OfferSection({
                       })
                       .catch(() => toast.error("Failed to create offer"));
                   }}
-                  className="mt-4 h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
+                  className="mt-4 h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
                 >
                   Generate Offer
                 </Button>
@@ -286,7 +286,7 @@ export function OfferSection({
                 size="sm"
                 disabled={sending}
                 onClick={handleSendOffer}
-                className="h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                className="h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
               >
                 {sendOfferMutation.isPending ? (
                   <Spinner className="size-3" />
@@ -460,7 +460,7 @@ export function OfferSection({
                     size="sm"
                     disabled={sending}
                     onClick={handleSendOffer}
-                    className="h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
+                    className="h-8 rounded-md border-none bg-[var(--theme-color)] px-3.5 text-xs font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer inline-flex items-center gap-1.5 disabled:opacity-50"
                   >
                     {sendOfferMutation.isPending ? (
                       <Spinner className="size-3" />

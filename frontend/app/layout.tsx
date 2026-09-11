@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Changa_One, Geist, Geist_Mono, Public_Sans } from "next/font/google";
+import { Changa_One, Geist, Geist_Mono, Inter_Tight } from "next/font/google";
 import "./globals.css";
 
-const publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const interTight = Inter_Tight({ subsets: ["latin"], variable: "--font-sans" });
 const changaOne = Changa_One({
   subsets: ["latin"],
   weight: "400",
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${publicSans.variable} ${changaOne.variable}`}
+      className={`${interTight.variable} ${changaOne.variable}`}
       suppressHydrationWarning
     >
       <body

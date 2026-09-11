@@ -63,7 +63,7 @@ export function TemplateFormHeader({
           <Button
             onClick={onSave}
             disabled={!canSave || isPending}
-            className="h-9 rounded-md border-none bg-[var(--theme-color)] px-4 text-sm font-semibold text-white hover:bg-[var(--theme-color-hover)] disabled:opacity-50 shadow-none"
+            className="h-9 rounded-md border-none bg-[var(--theme-color)] px-4 text-sm font-semibold text-[#121212] hover:bg-[var(--theme-color-hover)] disabled:opacity-50 shadow-none"
           >
             {isPending ? "Saving…" : mode === "new" ? "Save Template" : "Save Changes"}
           </Button>

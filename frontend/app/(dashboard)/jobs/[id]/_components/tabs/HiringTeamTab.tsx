@@ -123,7 +123,7 @@ export function HiringTeamTab({
                 <Button
                   disabled={addTeamMemberMutationPending || !newMemberId}
                   onClick={handleAddTeamMember}
-                  className="h-9 rounded-lg border-none bg-[var(--theme-color)] px-5 text-[13px] font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)] disabled:opacity-50"
+                  className="h-9 rounded-lg border-none bg-[var(--theme-color)] px-5 text-[13px] font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] disabled:opacity-50"
                 >
                   {addTeamMemberMutationPending ? "Adding…" : "Add Member"}
                 </Button>
@@ -153,7 +153,7 @@ export function HiringTeamTab({
                     className="size-11 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="size-11 rounded-full bg-[var(--theme-color)] flex items-center justify-center text-white font-medium text-sm overflow-hidden">
+                  <div className="size-11 rounded-full bg-[var(--theme-color)] flex items-center justify-center text-[#121212] font-medium text-sm overflow-hidden">
                     {member.firstName.charAt(0)}
                     {member.lastName.charAt(0)}
                   </div>

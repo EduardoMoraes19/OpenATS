@@ -92,7 +92,7 @@ export function EmailSection({ candidate }: EmailSectionProps) {
                 type="button"
                 onClick={sendEmail}
                 disabled={!emailSubject.trim() || !emailBody.trim()}
-                className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-white shadow-none hover:bg-[var(--theme-color-hover)] disabled:bg-neutral-700 disabled:text-neutral-400 disabled:opacity-70"
+                className="h-7 rounded-md border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] disabled:bg-neutral-700 disabled:text-neutral-400 disabled:opacity-70"
               >
                 <HugeiconsIcon
                   icon={SentIcon}

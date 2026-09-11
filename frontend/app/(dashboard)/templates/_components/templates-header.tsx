@@ -19,7 +19,7 @@ export function TemplatesHeader({ onNewTemplate }: TemplatesHeaderProps) {
       {isManager && (
         <Button
           onClick={onNewTemplate}
-          className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-white rounded-md h-8 px-4 flex items-center gap-2 border-none shadow-none text-sm font-medium transition-colors"
+          className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-[#121212] rounded-md h-8 px-4 flex items-center gap-2 border-none shadow-none text-sm font-medium transition-colors"
         >
           <HugeiconsIcon
             icon={PlusSignIcon}

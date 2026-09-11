@@ -358,7 +358,7 @@ export function JobHeader({
               <Link href={`/jobs/${jobId}/pipeline`}>
                 <Button
                   size="sm"
-                  className="h-[34px] cursor-pointer rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-white shadow-none hover:bg-[var(--theme-color-hover)]"
+                  className="h-[34px] cursor-pointer rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)]"
                 >
                   Hiring Pipeline
                   <HugeiconsIcon
@@ -372,7 +372,7 @@ export function JobHeader({
               <Button
                 size="sm"
                 disabled
-                className="h-[34px] rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-white shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-[34px] rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-[#121212] shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Hiring Pipeline
                 <HugeiconsIcon

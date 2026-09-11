@@ -240,7 +240,7 @@ export function CandidateSidePanel({
   ];
 
   const triggerBase =
-    "shrink-0 data-active:!bg-[var(--theme-color)] data-active:!border-[var(--theme-color)] data-active:!text-white border border-slate-200 dark:border-neutral-800 rounded-[8px] px-4 py-1.5 text-[13px] font-medium text-slate-600 dark:text-neutral-400 shadow-none bg-white dark:bg-neutral-900 cursor-pointer whitespace-nowrap";
+    "shrink-0 data-active:!bg-[var(--theme-color)] data-active:!border-[var(--theme-color)] data-active:!text-[#121212] border border-slate-200 dark:border-neutral-800 rounded-[8px] px-4 py-1.5 text-[13px] font-medium text-slate-600 dark:text-neutral-400 shadow-none bg-white dark:bg-neutral-900 cursor-pointer whitespace-nowrap";
 
   return (
     <div className="w-[520px] border-l border-slate-100 dark:border-neutral-800 flex flex-col bg-white dark:bg-neutral-950 overflow-hidden shrink-0">
@@ -281,7 +281,7 @@ export function CandidateSidePanel({
         <div className="px-5 pb-3">
           {candidate.resumeUrl ? (
             <a href={candidate.resumeUrl} target="_blank" rel="noreferrer">
-              <Button className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white font-medium text-[12px] gap-2 px-4 h-9 rounded-[8px] shadow-none border-none">
+              <Button className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] font-medium text-[12px] gap-2 px-4 h-9 rounded-[8px] shadow-none border-none">
                 <span>View CV</span>
                 <HugeiconsIcon
                   icon={ArrowUpRight01Icon}
@@ -481,7 +481,7 @@ export function CandidateSidePanel({
                     size="sm"
                     onClick={saveOffer}
                     disabled={updateOfferMutation.isPending}
-                    className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg gap-1.5"
+                    className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg gap-1.5"
                   >
                     <HugeiconsIcon icon={Tick02Icon} className="size-3.5" />
                     {updateOfferMutation.isPending ? "Saving…" : "Save"}
@@ -640,7 +640,7 @@ export function CandidateSidePanel({
                           status: "sent",
                         })
                       }
-                      className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg gap-1.5 disabled:opacity-50"
+                      className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg gap-1.5 disabled:opacity-50"
                     >
                       <HugeiconsIcon
                         icon={SentIcon}
@@ -751,7 +751,7 @@ export function CandidateSidePanel({
               <Button
                 size="sm"
                 onClick={() => setIsLogInterviewOpen(!isLogInterviewOpen)}
-                className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg gap-1.5"
+                className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg gap-1.5"
               >
                 {isLogInterviewOpen ? "Cancel" : "+ Log Interview"}
               </Button>
@@ -848,7 +848,7 @@ export function CandidateSidePanel({
                       },
                     );
                   }}
-                  className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg gap-1.5 disabled:opacity-50"
+                  className="h-8 px-3 text-[12px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg gap-1.5 disabled:opacity-50"
                 >
                   {createInterviewMutation.isPending ? "Saving…" : "Save"}
                 </Button>
@@ -948,7 +948,7 @@ export function CandidateSidePanel({
                                 },
                               );
                             }}
-                            className="h-7 px-2 text-[11px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg"
+                            className="h-7 px-2 text-[11px] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg"
                           >
                             Save
                           </Button>
@@ -1187,7 +1187,7 @@ export function CandidateSidePanel({
               </span>
               <Button
                 disabled={!emailSubject.trim() || !emailBody.trim()}
-                className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white font-medium text-[13px] gap-2 px-5 h-9 rounded-[8px] shadow-none border-none disabled:opacity-50"
+                className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] font-medium text-[13px] gap-2 px-5 h-9 rounded-[8px] shadow-none border-none disabled:opacity-50"
               >
                 <HugeiconsIcon
                   icon={SentIcon}

@@ -161,7 +161,7 @@ export function DiscussionsPanel({
                             setEditingNoteText("");
                           }}
                           disabled={!editingNoteText.trim()}
-                          className="h-9 px-4 rounded-md bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none cursor-pointer disabled:opacity-50"
+                          className="h-9 px-4 rounded-md bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none cursor-pointer disabled:opacity-50"
                         >
                           Save
                         </Button>
@@ -197,7 +197,7 @@ export function DiscussionsPanel({
             <Button
               onClick={handleSendNote}
               disabled={!noteText.trim() || !me}
-              className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white rounded-md h-11 w-11 p-0 font-medium shadow-none border-none disabled:opacity-50 transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center"
+              className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] rounded-md h-11 w-11 p-0 font-medium shadow-none border-none disabled:opacity-50 transition-all active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center"
               aria-label="Send note"
             >
               <HugeiconsIcon

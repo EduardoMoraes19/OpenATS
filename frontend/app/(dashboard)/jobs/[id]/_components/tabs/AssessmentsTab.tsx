@@ -180,7 +180,7 @@ export function AssessmentsTab({
                 <Button
                   type="submit"
                   disabled={attachAssessmentMutation.isPending}
-                  className="h-9 px-5 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-lg text-[13px] font-medium"
+                  className="h-9 px-5 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-lg text-[13px] font-medium"
                 >
                   {attachAssessmentMutation.isPending ? "Saving…" : "Save"}
                 </Button>

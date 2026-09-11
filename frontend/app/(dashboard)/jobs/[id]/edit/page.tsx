@@ -447,7 +447,7 @@ function EditJobForm({
       <div className="pt-10 flex items-center gap-4">
         <Button
           onClick={handleSubmit}
-          className="h-[34px] min-w-35 rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-white shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
+          className="h-[34px] min-w-35 rounded-md border-none bg-[var(--theme-color)] px-4 text-[14px] font-semibold leading-none text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
           disabled={!title || !departmentId || !employmentType || isPending}
         >
           {isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}

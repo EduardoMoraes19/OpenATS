@@ -141,7 +141,7 @@ export function InterviewCalendar({
                     <span
                       className={`absolute top-1.5 left-2 text-sm font-semibold ${
                         isToday
-                          ? "flex size-6 items-center justify-center rounded-full bg-[var(--theme-color)] text-white"
+                          ? "flex size-6 items-center justify-center rounded-full bg-[var(--theme-color)] text-[#121212]"
                           : "text-slate-600 dark:text-neutral-400"
                       }`}
                     >

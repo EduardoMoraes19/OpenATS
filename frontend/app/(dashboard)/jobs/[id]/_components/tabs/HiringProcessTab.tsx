@@ -56,7 +56,7 @@ export function HiringProcessTab({
         {isManager && (
           <Button
             onClick={() => setAddStageOpen(true)}
-            className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-white rounded-lg h-10 px-4 font-medium shadow-none border-none gap-2 text-sm"
+            className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-[#121212] rounded-lg h-10 px-4 font-medium shadow-none border-none gap-2 text-sm"
           >
             <HugeiconsIcon
               icon={PlusSignIcon}
@@ -111,7 +111,7 @@ export function HiringProcessTab({
                       <button
                         onClick={() => handleSaveStage(stage.id)}
                         disabled={updateStageMutationPending}
-                        className="text-xs font-medium text-white bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] px-3 h-8 rounded-md disabled:opacity-50"
+                        className="text-xs font-medium text-[#121212] bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] px-3 h-8 rounded-md disabled:opacity-50"
                       >
                         {updateStageMutationPending ? "Saving…" : "Save"}
                       </button>

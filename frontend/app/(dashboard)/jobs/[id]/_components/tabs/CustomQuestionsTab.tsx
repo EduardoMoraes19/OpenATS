@@ -228,7 +228,7 @@ export function CustomQuestionsTab({
                             updateQuestionMutationPending
                           }
                           onClick={() => handleSaveQuestion(q.id)}
-                          className="h-10 px-6 cursor-pointer bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none rounded-lg font-medium disabled:opacity-50"
+                          className="h-10 px-6 cursor-pointer bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none rounded-lg font-medium disabled:opacity-50"
                         >
                           {updateQuestionMutationPending
                             ? "Saving…"
@@ -410,7 +410,7 @@ export function CustomQuestionsTab({
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white font-medium px-5">
+                      <Button className="bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] font-medium px-5">
                         Save Logic
                       </Button>
                     </DialogFooter>
@@ -449,7 +449,7 @@ export function CustomQuestionsTab({
                   disabled={
                     !newQuestionText.trim() || createQuestionMutation.isPending
                   }
-                  className="h-10 px-6 bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-white shadow-none rounded-lg font-medium disabled:opacity-50"
+                  className="h-10 px-6 bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none rounded-lg font-medium disabled:opacity-50"
                   onClick={() => {
                     if (!newQuestionText.trim()) return;
                     createQuestionMutation.mutate(
@@ -482,7 +482,7 @@ export function CustomQuestionsTab({
 
       {isManager && (
         <div className="pt-4">
-          <Button className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-white rounded-lg h-10 px-6 font-medium shadow-none">
+          <Button className="bg-[var(--theme-color)] cursor-pointer hover:bg-[var(--theme-color-hover)] text-[#121212] rounded-lg h-10 px-6 font-medium shadow-none">
             Save Changes
           </Button>
         </div>

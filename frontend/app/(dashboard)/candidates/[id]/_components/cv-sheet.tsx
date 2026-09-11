@@ -35,7 +35,7 @@ export function CvSheet({ open, onOpenChange, candidate }: CvSheetProps) {
                 href={candidate.resumeUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--theme-color)] px-3 text-sm font-semibold text-white hover:bg-[var(--theme-color-hover)]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--theme-color)] px-3 text-sm font-semibold text-[#121212] hover:bg-[var(--theme-color-hover)]"
               >
                 Open in New Tab
               </a>

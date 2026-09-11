@@ -16,7 +16,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--theme-color)] text-white hover:bg-[var(--theme-color-hover)]",
+          "bg-[var(--theme-color)] text-[#121212] hover:bg-[var(--theme-color-hover)]",
         outline:
           "border-transparent bg-neutral-700 text-white hover:bg-neutral-600 dark:bg-neutral-700 dark:hover:bg-neutral-600 aria-expanded:bg-neutral-600 aria-expanded:text-white shadow-none",
         secondary:

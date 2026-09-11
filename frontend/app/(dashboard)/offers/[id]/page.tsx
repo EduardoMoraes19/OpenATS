@@ -420,7 +420,7 @@ export default function OfferDetailPage() {
                           offerStatus === "Accepted" ||
                           offerStatus === "Declined"
                         }
-                        className="w-full h-11 rounded-lg bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-11 rounded-lg bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] font-semibold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <HugeiconsIcon icon={SentIcon} className="size-4" />
                         {offerStatus === "Sent"

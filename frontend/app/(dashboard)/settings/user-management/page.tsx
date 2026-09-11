@@ -320,7 +320,7 @@ export default function UserManagementPage() {
         </Button>
         <div className="ml-auto">
           <Button
-            className="h-8 rounded-md border-none bg-[var(--theme-color)] px-4 text-sm font-semibold leading-none text-white shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
+            className="h-8 rounded-md border-none bg-[var(--theme-color)] px-4 text-sm font-semibold leading-none text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] cursor-pointer"
             onClick={openCreate}
           >
             <HugeiconsIcon

@@ -127,7 +127,7 @@ export function InlineCalendar({
                     <span
                       className={`
                         inline-flex size-6 items-center justify-center rounded-full text-sm font-medium
-                        ${isToday ? "bg-[var(--theme-color)] text-white font-bold" : ""}
+                        ${isToday ? "bg-[var(--theme-color)] text-[#121212] font-bold" : ""}
                         ${isSelected && !isToday ? "bg-slate-900 dark:bg-neutral-100 text-white dark:text-neutral-900" : ""}
                         ${!isToday && !isSelected ? "text-slate-700 dark:text-neutral-300" : ""}
                       `}

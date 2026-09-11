@@ -106,7 +106,7 @@ export function AssessmentInviteDialog({
             <Button
               onClick={onGenerateLink}
               disabled={!selectedCandidateId || isPending}
-              className="w-full h-8 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white shadow-none border-none rounded-md text-sm font-medium gap-2"
+              className="w-full h-8 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] shadow-none border-none rounded-md text-sm font-medium gap-2"
             >
               {isPending ? (
                 <>

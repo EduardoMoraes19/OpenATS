@@ -34,7 +34,7 @@ export function QuestionSidebar({
       <div className="p-4">
         <Button
           onClick={onAdd}
-          className="w-full bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white h-10 rounded-lg shadow-none border-none font-medium text-sm gap-2 transition-all active:scale-[0.98]"
+          className="w-full bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] h-10 rounded-lg shadow-none border-none font-medium text-sm gap-2 transition-all active:scale-[0.98]"
         >
           <HugeiconsIcon
             icon={PlusSignIcon}

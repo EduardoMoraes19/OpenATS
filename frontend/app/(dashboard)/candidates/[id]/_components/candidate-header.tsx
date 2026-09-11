@@ -147,7 +147,7 @@ export function CandidateHeader({
             <Button
               size="sm"
               disabled={!candidate.resumeUrl}
-              className="h-7 rounded-[6px] cursor-pointer border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold leading-none text-white shadow-none hover:bg-[var(--theme-color-hover)] disabled:bg-neutral-700 disabled:text-neutral-400 disabled:opacity-70"
+              className="h-7 rounded-[6px] cursor-pointer border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold leading-none text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)] disabled:bg-neutral-700 disabled:text-neutral-400 disabled:opacity-70"
               onClick={onViewCv}
             >
               <HugeiconsIcon icon={File01Icon} className="size-3" />
@@ -191,7 +191,7 @@ export function CandidateHeader({
                   size="sm"
                   disabled={moveStageMutation.isPending}
                   onClick={onSaveStageChange}
-                  className="h-7 cursor-pointer rounded-[6px] border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold leading-none text-white shadow-none hover:bg-[var(--theme-color-hover)]"
+                  className="h-7 cursor-pointer rounded-[6px] border-none bg-[var(--theme-color)] px-2.5 text-sm font-semibold leading-none text-[#121212] shadow-none hover:bg-[var(--theme-color-hover)]"
                 >
                   {moveStageMutation.isPending ? "Saving…" : "Save"}
                 </Button>

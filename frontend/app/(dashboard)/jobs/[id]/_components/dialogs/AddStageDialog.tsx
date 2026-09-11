@@ -102,7 +102,7 @@ export function AddStageDialog({
           <Button
             onClick={handleAddStage}
             disabled={!newStageName.trim() || isPending}
-            className="h-10 px-6 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-white font-medium shadow-none rounded-md border-none disabled:opacity-50"
+            className="h-10 px-6 bg-[var(--theme-color)] hover:bg-[var(--theme-color-hover)] text-[#121212] font-medium shadow-none rounded-md border-none disabled:opacity-50"
           >
             {isPending ? (
               <span className="inline-flex items-center gap-2">
