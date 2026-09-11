@@ -21,7 +21,7 @@ export function SiteHeader() {
           href="/"
           className={`${interTight.className} flex items-center gap-2 text-2xl leading-none tracking-tight text-black dark:text-white select-none`}
         >
-          featTalent
+          feat<span className="text-[#25E2AF]">Talent</span>
         </Link>
 
         <div className="flex shrink-0 items-center gap-1">
