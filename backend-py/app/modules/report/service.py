@@ -11,7 +11,7 @@ for line.
 from __future__ import annotations
 
 import math
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import text
@@ -151,7 +151,23 @@ async def get_analytics(db: AsyncSession, *, period: str, department_id: int | N
         return cached
 
     days = _period_days(period)
-    now = datetime.now(UTC).replace(tzinfo=None)
+    # Deliberately the *host's local* wall-clock time, not UTC - this
+    # replicates a real report.service.ts quirk, not a Python bug. All the
+    # `timestamp` (no tz) columns here (applied_at/created_at/moved_at/...)
+    # are populated by Postgres's own `now()` under a UTC session timezone,
+    # so they hold true-UTC wall-clock values. But report.service.ts binds
+    # `new Date()` as the query parameter, and node-postgres formats a Date
+    # using its LOCAL getters (getHours/getMinutes/...) plus an offset
+    # suffix (e.g. "15:34:58-03:00"); Postgres then parses that string
+    # against a `timestamp without time zone` column by keeping the literal
+    # digits and discarding the offset entirely (verified empirically: casting
+    # '...T15:34:58-03:00'::timestamp yields 15:34:58, not the true-UTC
+    # 18:34:58). So on a host whose local timezone lags UTC, every "now" bound
+    # into these queries is quietly several hours behind the row timestamps -
+    # asyncpg does the same verbatim-digit binding for a naive datetime, so
+    # using the local wall clock here (instead of true UTC) reproduces that
+    # exact bug rather than silently fixing it.
+    now = datetime.now()
     current_start = now - timedelta(days=days)
     previous_start = current_start - timedelta(days=days)
 
