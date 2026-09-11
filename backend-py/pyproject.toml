@@ -1,0 +1,88 @@
+[project]
+name = "openats-backend"
+version = "0.1.0"
+description = "OpenATS backend (Python/FastAPI rewrite)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "sqlalchemy[asyncio]>=2.0.35",
+    "asyncpg>=0.29",
+    "greenlet>=3.1",
+    "alembic>=1.13",
+    "pydantic[email]>=2.9",
+    "pydantic-settings>=2.5",
+    "python-socketio>=5.11",
+    "arq>=0.26",
+    "redis>=5.0",
+    "pyjwt[crypto]>=2.9",
+    "boto3>=1.35",
+    "resend>=2.4",
+    "google-genai>=0.3",
+    "google-api-python-client>=2.146",
+    "google-auth>=2.35",
+    "google-auth-oauthlib>=1.2",
+    "python-multipart>=0.0.12",
+    "cryptography>=43.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.11",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# B008: FastAPI's dependency injection idiom requires `Depends(...)` as an
+# argument default - that is the framework's documented usage, not a bug.
+# UP042: SQLAlchemy's native-enum support requires the `str, enum.Enum`
+# double-inheritance mixin to serialize enum *values* - not legacy style.
+ignore = ["B008", "UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+# Raw DDL strings (migration) and inline HTML email templates (mail
+# service) read better unwrapped than force-broken at 110 columns.
+"app/alembic/versions/*.py" = ["E501"]
+"app/shared/services/mail_service.py" = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# The async engine (app/db/base.py) is a module-level singleton whose
+# connection pool binds to whatever event loop first used it. Function-scoped
+# loops (pytest-asyncio's default) tear that loop down between tests while
+# the pool still holds connections created on it, causing "attached to a
+# different loop" errors on the second test. Session-scoped loops keep one
+# loop for the whole run, matching the engine's own lifetime.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = true
+# Third-party libs without type stubs - don't fail the build over their
+# missing annotations, only over our own code's typing.
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "app.alembic.versions.*"
+ignore_errors = true
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
