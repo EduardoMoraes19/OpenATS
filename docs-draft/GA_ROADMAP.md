@@ -67,10 +67,10 @@ The focus of this phase is correctness and safety, not new features. Nothing her
 
 ## Backend rewrite: Python (FastAPI)
 
-`backend-py/` is a from-scratch port of `backend/` to FastAPI + SQLAlchemy +
-Alembic, built module-for-module against the same 33-table Postgres schema.
-Not yet the default - `backend/` is still what `deploy.yml` ships - but this
-is the intended eventual replacement, not a spike.
+`backend-py/` was a from-scratch port of the original TypeScript/Express
+backend to FastAPI + SQLAlchemy + Alembic, built module-for-module against
+the same 33-table Postgres schema. As of the cutover below, it **is** the
+backend - the original TypeScript implementation has been deleted.
 
 | Item | Why it matters | Status |
 | --- | --- | --- |
@@ -82,7 +82,8 @@ is the intended eventual replacement, not a spike.
 | `Dockerfile.backend-py` build verified | Built the image and ran both the API and the arq worker command against a real Postgres/Redis - migrations apply, health check passes, worker connects. Never confirmed to actually run before this. | 🟢 Done |
 | Test coverage for `hiring_team`, `upload`, `integrations`/OAuth | Had zero tests anywhere. `test_hiring_team.py`, `test_upload.py`, `test_integrations.py` now cover list/add/remove and the job-creator-can't-be-removed rule, staff and public resume/logo upload (validation, auth, the `company.logoUrl` side effect), and the full OAuth callback (success, missing params, invalid state, a rejected code) - R2 and the Google client are monkeypatched at their boundaries, everything else is real. | 🟢 Done |
 | Test coverage for the CV analysis worker | Only the scoring math (`test_scoring.py`) was tested. `test_cv_analysis_worker.py` now covers `run_analysis`'s not-a-resume rejection, the non-fatal AI-summary failure, successful scoring/persistence, and the arq task's retry-vs-exhaustion bookkeeping (R2 and Gemini monkeypatched). Found and fixed one more bug while writing it: `run_analysis` called `r2_service.download_file` - a blocking boto3 call - directly instead of through `asyncio.to_thread`, the same event-loop-freezing bug already fixed for uploads. | 🟢 Done |
-| Cutover decision (retire `backend/`) | Both coverage gaps above are closed - full suite is 84/84. Still genuinely urgent: `backend/`'s Drizzle schema still queries a `users.asgardeo_user_id` column that `backend-py`'s auth migration (`0002_local_auth`) drops, so **every authenticated `backend/` request now crashes with a 500 against any database that has run that migration** - discovered live while building the Socket.IO parity check above. The two backends can no longer share a database at all, not just an auth token. Decide whether `backend-py` becomes the deployed backend and `backend/` is removed, or the two keep running against separate databases for longer. | 🔴 Planned |
+| Cutover: remove `backend/`, `backend-py/` is the only backend | The TypeScript implementation, its Dockerfile/entrypoint, and `setup-asgardeo.sh` are deleted. `pnpm-workspace.yaml`, root `package.json`, `.github/workflows/test.yml` (now `test-frontend` + `test-backend`), `playwright.config.ts`, `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, and `docs-draft/TESTING.md` all updated to describe `backend-py/` as the one true backend. Verified post-cut: `make test` (84 backend + 24 frontend), `make lint`, `make build`, and a fresh `docker build -f Dockerfile.backend-py` all pass from a clean checkout. | 🟢 Done |
+| `deploy.yml` rewritten for Docker, not yet exercised against the real VM | SSH → `docker build -f Dockerfile.backend-py` → restart two `--network host` containers (api + worker). Requires `backend-py/.env` to already exist on the VM with real secrets (carried over from the old pm2/Node deploy) and Docker to be installed there - neither has been confirmed on the actual box, only reasoned through and YAML-validated locally. Watch the first deploy closely. | 🟡 In progress |
 
 ---
 
