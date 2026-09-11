@@ -44,7 +44,7 @@ export default function AlreadyScheduled({ timeSlots }: Props) {
             : "This interview has already been scheduled."}
         </p>
         <p className="mt-8 text-xs text-slate-400 dark:text-neutral-500">
-          Powered by OpenATS
+          Powered by featTalent
         </p>
       </div>
     </div>

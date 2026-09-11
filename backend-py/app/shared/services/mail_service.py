@@ -48,7 +48,7 @@ def _email_card(*, title: str, body_html: str) -> str:
       </div>
       <div style="background: #ffffff; border: 1px solid #e5e5e5; border-top: none; padding: 32px; border-radius: 0 0 16px 16px;">
         {body_html}
-        <p style="color: #737373; font-size: 12px; margin-top: 32px; text-align: center;">Powered by OpenATS</p>
+        <p style="color: #737373; font-size: 12px; margin-top: 32px; text-align: center;">Powered by featTalent</p>
       </div>
     </div>
     """
@@ -73,7 +73,7 @@ def _send_email_blocking(*, to: str, subject: str, html: str) -> None:
     try:
         resend.Emails.send(
             {
-                "from": f"OpenATS <{_FROM_EMAIL}>",
+                "from": f"featTalent <{_FROM_EMAIL}>",
                 "to": [to],
                 "subject": subject,
                 "html": html,

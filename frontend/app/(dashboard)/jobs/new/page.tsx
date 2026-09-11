@@ -425,7 +425,7 @@ export default function CreateNewJobPage() {
           <div className="pt-10 flex items-center gap-2">
             <Button
               onClick={handleSubmit}
-              className="h-10! rounded-md border-none bg-theme hover:bg-theme-hover px-4 text-base font-semibold leading-none text-white shadow-none cursor-pointer gap-2 flex items-center"
+              className="h-10! rounded-md border-none bg-theme hover:bg-theme-hover px-4 text-base font-semibold leading-none text-[#121212] shadow-none cursor-pointer gap-2 flex items-center"
               disabled={
                 !title ||
                 !departmentId ||

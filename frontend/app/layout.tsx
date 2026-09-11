@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OpenATS",
+  title: "featTalent",
   description: "Open Source Applicant Tracking System",
 };
 

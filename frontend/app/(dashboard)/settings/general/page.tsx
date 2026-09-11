@@ -179,7 +179,7 @@ function CompanyForm({
           <Button
             onClick={handleSave}
             disabled={upsertCompany.isPending}
-            className="h-8 px-4 bg-theme hover:bg-theme-hover text-white rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer"
+            className="h-8 px-4 bg-theme hover:bg-theme-hover text-[#121212] rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer"
           >
             {upsertCompany.isPending
               ? "Saving…"
@@ -458,7 +458,7 @@ function DepartmentsPanel({ company }: { company: Company | null | undefined }) 
               <Button
                 onClick={handleAdd}
                 disabled={!newName.trim() || createDept.isPending}
-                className="h-9 px-4 rounded-md bg-theme hover:bg-theme-hover text-white border border-theme shadow-none text-sm font-semibold cursor-pointer"
+                className="h-9 px-4 rounded-md bg-theme hover:bg-theme-hover text-[#121212] border border-theme shadow-none text-sm font-semibold cursor-pointer"
               >
                 {createDept.isPending ? "Adding…" : "Add"}
               </Button>
@@ -511,7 +511,7 @@ function DepartmentsPanel({ company }: { company: Company | null | undefined }) 
               <Button
                 onClick={() => editId !== null && handleEdit(editId)}
                 disabled={!editVal.trim() || updateDept.isPending}
-                className="h-9 px-4 rounded-md bg-theme hover:bg-theme-hover text-white border border-theme shadow-none text-sm font-semibold cursor-pointer"
+                className="h-9 px-4 rounded-md bg-theme hover:bg-theme-hover text-[#121212] border border-theme shadow-none text-sm font-semibold cursor-pointer"
               >
                 {updateDept.isPending ? "Saving…" : "Save"}
               </Button>

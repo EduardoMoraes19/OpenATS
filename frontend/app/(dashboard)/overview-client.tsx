@@ -192,7 +192,7 @@ export function OverviewClient() {
           {isManager && (
             <Button
               onClick={() => setExportDialogOpen(true)}
-              className="bg-theme hover:bg-theme-hover text-white rounded-md h-8 px-3 flex items-center gap-1.5 border border-theme shadow-none text-sm font-semibold cursor-pointer"
+              className="bg-theme hover:bg-theme-hover text-[#121212] rounded-md h-8 px-3 flex items-center gap-1.5 border border-theme shadow-none text-sm font-semibold cursor-pointer"
             >
               <HugeiconsIcon icon={Download05Icon} className="size-3.5" />
               Export Report
@@ -325,7 +325,7 @@ export function OverviewClient() {
             <Button
               onClick={handleExport}
               disabled={exportReport.isPending}
-              className="flex-1 h-9 bg-theme hover:bg-theme-hover text-white rounded-lg border border-theme shadow-none text-sm font-semibold cursor-pointer"
+              className="flex-1 h-9 bg-theme hover:bg-theme-hover text-[#121212] rounded-lg border border-theme shadow-none text-sm font-semibold cursor-pointer"
             >
               {exportReport.isPending ? "Exporting..." : "Export"}
             </Button>

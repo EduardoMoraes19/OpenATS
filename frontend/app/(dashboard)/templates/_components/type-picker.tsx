@@ -100,7 +100,7 @@ export function TemplateTypePicker({
           <Button
             disabled={!pickedType}
             onClick={onContinue}
-            className="bg-theme hover:bg-theme-hover text-white disabled:opacity-40"
+            className="bg-theme hover:bg-theme-hover text-[#121212] disabled:opacity-40"
           >
             Continue
           </Button>

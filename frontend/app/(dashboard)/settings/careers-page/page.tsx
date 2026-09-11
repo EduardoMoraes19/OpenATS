@@ -164,12 +164,12 @@ export default function CareersSettingsPage() {
             Careers Page
           </h1>
           <p className="text-sm text-slate-400 dark:text-neutral-500 mt-1.5 max-w-2xl">
-            Connect your careers site to OpenATS with the public job API or
+            Connect your careers site to featTalent with the public job API or
             the embed snippet below.
           </p>
         </div>
         <Button
-          className="h-9 px-4 shrink-0 bg-theme hover:bg-theme-hover text-white rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer"
+          className="h-9 px-4 shrink-0 bg-theme hover:bg-theme-hover text-[#121212] rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer"
           render={<Link href="/settings/careers-page/preview" prefetch />}
         >
           Open listing preview
@@ -267,7 +267,7 @@ export default function CareersSettingsPage() {
             <Button
               type="button"
               size="sm"
-              className="h-9 px-4 mt-3 bg-theme hover:bg-theme-hover text-white rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer disabled:opacity-60"
+              className="h-9 px-4 mt-3 bg-theme hover:bg-theme-hover text-[#121212] rounded-md border border-theme shadow-none text-sm font-semibold cursor-pointer disabled:opacity-60"
               onClick={saveOrigins}
               disabled={isLoading || updateOrigins.isPending || isError}
             >

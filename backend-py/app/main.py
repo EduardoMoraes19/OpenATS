@@ -38,7 +38,7 @@ async def _lifespan(app: FastAPI):
     await stop_cv_analysis_bridge()
 
 
-fastapi_app = FastAPI(title="OpenATS API", lifespan=_lifespan)
+fastapi_app = FastAPI(title="featTalent API", lifespan=_lifespan)
 fastapi_app.add_middleware(EnvelopeMiddleware)
 fastapi_app.add_middleware(DynamicCorsMiddleware)
 register_error_handlers(fastapi_app)

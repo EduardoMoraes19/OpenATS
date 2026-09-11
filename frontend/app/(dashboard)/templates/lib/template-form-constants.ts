@@ -24,7 +24,7 @@ export const VARS = [
 export const SAMPLE: Record<string, string> = {
   candidate_name: "Alex Johnson",
   job_title: "Senior Software Engineer",
-  company_name: "OpenATS Inc.",
+  company_name: "featTalent Inc.",
   start_date: "August 18, 2026",
   salary: "120,000",
   currency: "USD",

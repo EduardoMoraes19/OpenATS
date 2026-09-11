@@ -21,7 +21,7 @@ export default function ErrorState({ message }: { message: string }) {
           {message || "This link is invalid or has expired."}
         </p>
         <p className="mt-8 text-xs text-slate-400 dark:text-neutral-500">
-          Powered by OpenATS
+          Powered by featTalent
         </p>
       </div>
     </div>

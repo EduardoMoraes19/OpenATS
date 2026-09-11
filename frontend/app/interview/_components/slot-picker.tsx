@@ -227,7 +227,7 @@ export default function SlotPicker({ data, token, apiBase }: Props) {
         </div>
 
         <p className="text-center text-xs text-slate-400 dark:text-neutral-500 mt-8">
-          {data.candidateName} · Powered by OpenATS
+          {data.candidateName} · Powered by featTalent
         </p>
       </div>
     </div>

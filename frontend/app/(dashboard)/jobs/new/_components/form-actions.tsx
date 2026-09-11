@@ -23,7 +23,7 @@ export function FormActions({
       <Button
         onClick={onSubmit}
         disabled={isSubmitDisabled}
-        className="h-10! rounded-md border-none bg-theme hover:bg-theme-hover px-4 text-base font-semibold leading-none text-white shadow-none cursor-pointer gap-2 flex items-center"
+        className="h-10! rounded-md border-none bg-theme hover:bg-theme-hover px-4 text-base font-semibold leading-none text-[#121212] shadow-none cursor-pointer gap-2 flex items-center"
       >
         {isPending ? (
           <>

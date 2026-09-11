@@ -20,7 +20,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm flex flex-col gap-6">
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-semibold text-slate-900 dark:text-neutral-100">
-            Sign in to OpenATS
+            Sign in to featTalent
           </h1>
           <p className="text-sm text-slate-500 dark:text-neutral-400">
             Enter your email and password to continue.

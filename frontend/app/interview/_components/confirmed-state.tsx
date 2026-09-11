@@ -26,7 +26,7 @@ export default function ConfirmedState({ jobTitle }: Props) {
           is confirmed. A confirmation email with the details is on its way.
         </p>
         <p className="mt-8 text-xs text-slate-400 dark:text-neutral-500">
-          Powered by OpenATS
+          Powered by featTalent
         </p>
       </div>
     </div>

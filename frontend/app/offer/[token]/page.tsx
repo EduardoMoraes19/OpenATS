@@ -288,7 +288,7 @@ export default function OfferPortalPage({
         )}
 
         <p className="text-center text-xs text-slate-400 dark:text-neutral-500 mt-12">
-          Powered by OpenATS
+          Powered by featTalent
         </p>
       </div>
 
