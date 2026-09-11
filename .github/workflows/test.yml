@@ -78,3 +78,67 @@ jobs:
 
       - name: Build backend
         run: pnpm --filter ./backend build
+
+  test-backend-py:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: openats
+          POSTGRES_PASSWORD: openats
+          POSTGRES_DB: openats_test
+        # 5433 to match backend-py/.env.test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: backend-py
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend-py/pyproject.toml
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      # backend-py/.env.test is committed on purpose, like backend/.env.test -
+      # it holds no secrets, only dummy values, so PRs from forks can run it.
+      - name: Use the test env file
+        run: cp .env.test .env
+
+      - name: Apply migrations to the test database
+        run: alembic upgrade head
+
+      - name: Lint
+        run: ruff check app
+
+      - name: Type-check
+        run: mypy app
+
+      - name: Run unit and integration tests
+        run: pytest tests/ -q
