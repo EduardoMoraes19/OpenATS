@@ -16,11 +16,20 @@ from app.logging import get_logger
 from app.modules.candidate import service
 from app.modules.candidate.schemas import (
     BulkDeleteCandidatesIn,
+    CandidateActivityOut,
+    CandidateAnswerOut,
+    CandidateAnswerSelectionOut,
     CandidateApplyIn,
+    CandidateCvAnalysisOut,
+    CandidateInterviewSummaryOut,
     CandidateListItemOut,
     CandidateOut,
+    CandidateStageHistoryOut,
     MoveStageIn,
 )
+from app.modules.candidate.service import CandidateDetail
+from app.modules.offer.schemas import OfferOut
+from app.modules.rejection.schemas import RejectionOut
 from app.queues.cv_analysis.queue import request_cv_analysis
 from app.shared.auth.deps import get_current_user, require_manager
 from app.shared.auth.job_access import can_access_candidate
@@ -147,17 +156,115 @@ async def list_candidates_for_job(
     )
 
 
-@router.get("/{candidate_id}", response_model=CandidateOut)
+def _candidate_detail_dict(detail: CandidateDetail) -> dict:
+    """Mirrors candidate.service.ts's `getById` composition exactly - see
+    CandidateDetail in service.py for the batched-query strategy behind it.
+    Built as a plain dict (not a single nested Pydantic model) because
+    OfferOut's module already imports this module's CandidateOut (to embed
+    the candidate on an offer) - importing OfferOut back into
+    candidate/schemas.py would be circular. router.py has no such
+    constraint, so the offer/rejection pieces are assembled here instead."""
+    base = signed_candidate_out(detail.candidate).model_dump(by_alias=True)
+    base["stageName"] = detail.stage_name
+    base["jobTitle"] = detail.job_title
+    base["answers"] = [
+        CandidateAnswerOut(
+            id=answer.id,
+            candidate_id=answer.candidate_id,
+            question_id=answer.question_id,
+            answer_text=answer.answer_text,
+            created_at=answer.created_at,
+            question_title=question_title,
+        ).model_dump(by_alias=True)
+        for answer, question_title in detail.answers
+    ]
+    base["selections"] = [
+        CandidateAnswerSelectionOut(
+            id=selection.id,
+            candidate_id=selection.candidate_id,
+            question_id=selection.question_id,
+            option_id=selection.option_id,
+            created_at=selection.created_at,
+            question_title=question_title,
+            option_label=option_label,
+        ).model_dump(by_alias=True)
+        for selection, question_title, option_label in detail.selections
+    ]
+    base["history"] = [
+        CandidateStageHistoryOut.model_validate(row).model_dump(by_alias=True) for row in detail.history
+    ]
+    base["offer"] = OfferOut.model_validate(detail.offer).model_dump(by_alias=True) if detail.offer else None
+    base["cvAnalysis"] = (
+        CandidateCvAnalysisOut(
+            status=detail.cv_analysis.status,
+            match_score=detail.cv_analysis.match_score,
+            matched_skills=detail.cv_analysis.matched_skills,
+            missing_skills=detail.cv_analysis.missing_skills,
+            score_breakdown=detail.cv_analysis.score_breakdown,
+            ai_summary=detail.cv_analysis.ai_summary,
+            error_message=detail.cv_analysis.error_message,
+            updated_at=detail.cv_analysis.updated_at,
+        ).model_dump(by_alias=True)
+        if detail.cv_analysis
+        else None
+    )
+    base["rejections"] = [
+        RejectionOut.model_validate(row).model_dump(by_alias=True) for row in detail.rejections
+    ]
+    base["interviews"] = [
+        CandidateInterviewSummaryOut(
+            id=interview.id,
+            candidate_id=interview.candidate_id,
+            stage_id=interview.stage_id,
+            job_id=interview.job_id,
+            scheduled_at=interview.scheduled_at,
+            duration_minutes=interview.duration_minutes,
+            notes=interview.notes,
+            outcome=interview.outcome,
+            status=interview.status,
+            event_name=interview.event_name,
+            event_type=interview.event_type,
+            meeting_url=interview.meeting_url,
+            body_text=interview.body_text,
+            time_slots=interview.time_slots,
+            public_token=interview.public_token,
+            google_event_id=interview.google_event_id,
+            created_by=interview.created_by,
+            created_at=interview.created_at,
+            updated_at=interview.updated_at,
+            stage_type=stage_type,
+        ).model_dump(by_alias=True)
+        for interview, stage_type in detail.interviews
+    ]
+    base["activities"] = [
+        CandidateActivityOut(
+            id=activity.id,
+            candidate_id=activity.candidate_id,
+            job_id=activity.job_id,
+            offer_id=activity.offer_id,
+            stage_id=activity.stage_id,
+            actor_id=activity.actor_id,
+            event_type=activity.event_type,
+            metadata=activity.metadata_,
+            created_at=activity.created_at,
+            stage=stage,
+        ).model_dump(by_alias=True)
+        for activity, stage in detail.activities
+    ]
+    return base
+
+
+@router.get("/{candidate_id}", response_model=None)
 async def get_candidate(
     candidate_id: int,
     user: AuthenticatedUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> CandidateOut:
+) -> dict:
     if user.role == "interviewer" and not await can_access_candidate(db, user, candidate_id):
         raise HTTPException(status_code=403, detail="You do not have access to this resource")
 
-    candidate = await service.get_candidate(db, candidate_id)
-    return signed_candidate_out(candidate)
+    detail = await service.get_candidate_detail(db, candidate_id)
+    return _candidate_detail_dict(detail)
 
 
 @router.patch("/{candidate_id}", response_model=CandidateOut, dependencies=[Depends(require_manager)])

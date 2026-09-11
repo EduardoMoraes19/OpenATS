@@ -91,8 +91,13 @@ class OfferListItemOut(OfferOut):
 
 
 class PublicOfferOut(ApiModel):
-    candidate_name: str
-    job_title: str
+    """`getPublicByToken` in offer.service.ts: the curated view shown on the
+    public offer-review page. Note the asymmetry (preserved verbatim, not a
+    bug) - accept/decline on that same page return the full raw `OfferOut`
+    shape below instead of this curated one."""
+
+    id: int
+    status: OfferStatus
     salary: Decimal | None
     currency: str | None
     employment_type: EmploymentType | None
@@ -100,4 +105,10 @@ class PublicOfferOut(ApiModel):
     reporting_manager: str | None
     benefits: str | None
     offer_letter_html: str | None
-    status: OfferStatus
+    sent_at: UtcDatetime | None
+    viewed_at: UtcDatetime | None
+    accepted_at: UtcDatetime | None
+    declined_at: UtcDatetime | None
+    candidate_name: str
+    candidate_email: str
+    job_title: str

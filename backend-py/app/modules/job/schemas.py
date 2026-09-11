@@ -93,7 +93,9 @@ class JobAssessmentAttachmentOut(ApiOutModel):
 
 
 class PublicJobOut(ApiOutModel):
-    """Strips hiringTeam/pipelineStages/createdBy for the careers page."""
+    """`getPublicJobById` in job.controller.ts: the full internal job row
+    minus hiringTeam/pipelineStages/createdBy - unlike the careers list
+    below, this does NOT curate down to a minimal shape."""
 
     id: int
     slug: str
@@ -108,5 +110,24 @@ class PublicJobOut(ApiOutModel):
     salary_fixed: Decimal | None
     salary_min: Decimal | None
     salary_max: Decimal | None
+    status: JobStatus
+    application_email_template_id: int | None
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
     skills: list[str] = Field(default_factory=list)
+
+
+class PublicJobListItemOut(ApiOutModel):
+    """`listPublishedForCareers` in job.service.ts: a deliberately minimal,
+    curated shape for the public careers index - it does not leak
+    departmentId, description, or the salary breakdown, and joins in the
+    department's name instead of its id."""
+
+    id: int
+    slug: str
+    title: str
+    employment_type: EmploymentType
+    location: str | None
+    department_name: str
+    created_at: UtcDatetime
 

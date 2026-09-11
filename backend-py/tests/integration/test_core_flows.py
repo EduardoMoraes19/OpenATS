@@ -81,6 +81,105 @@ async def test_create_company_then_department_then_job_full_flow(client):
     assert any(j["slug"] == slug for j in public_response.json()["data"])
 
 
+async def test_public_jobs_list_returns_minimal_curated_shape(client):
+    """job.service.ts's `listPublishedForCareers` deliberately curates the
+    careers index down to id/slug/title/employmentType/location/
+    departmentName/createdAt - it must not leak departmentId, description,
+    the salary breakdown, or skills, and must join in the department's name
+    rather than its id."""
+    admin_token = await make_bearer_token(email="careers-admin@example.com", role="super_admin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    company_response = await client.put(
+        "/api/company", json={"name": "Careers Co", "email": "careers@example.com"}, headers=headers
+    )
+    assert company_response.status_code == 200
+
+    department_response = await client.post(
+        "/api/company/departments", json={"name": "Careers Dept"}, headers=headers
+    )
+    assert department_response.status_code == 201, department_response.text
+    department_id = department_response.json()["data"]["id"]
+
+    job_response = await client.post(
+        "/api/jobs",
+        json={
+            "title": "Support Engineer",
+            "departmentId": department_id,
+            "employmentType": "full_time",
+            "status": "published",
+            "salaryType": "fixed",
+            "currency": "USD",
+            "payFrequency": "yearly",
+            "salaryFixed": 90000,
+            "skills": ["SQL"],
+        },
+        headers=headers,
+    )
+    assert job_response.status_code == 201, job_response.text
+    slug = job_response.json()["data"]["slug"]
+
+    public_response = await client.get("/public/jobs")
+    assert public_response.status_code == 200
+    listed = next(j for j in public_response.json()["data"] if j["slug"] == slug)
+
+    assert listed == {
+        "id": listed["id"],
+        "slug": slug,
+        "title": "Support Engineer",
+        "employmentType": "full_time",
+        "location": None,
+        "departmentName": "Careers Dept",
+        "createdAt": listed["createdAt"],
+    }
+
+
+async def test_public_job_detail_adds_status_and_timestamps_to_the_full_shape(client):
+    """job.controller.ts's `getPublicJobById` returns the full internal job
+    row (departmentId and the salary breakdown included) minus hiringTeam/
+    pipelineStages/createdBy, plus status/applicationEmailTemplateId/
+    createdAt/updatedAt."""
+    admin_token = await make_bearer_token(email="job-detail-admin@example.com", role="super_admin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    company_response = await client.put(
+        "/api/company", json={"name": "Detail Co", "email": "detail@example.com"}, headers=headers
+    )
+    assert company_response.status_code == 200
+
+    department_response = await client.post(
+        "/api/company/departments", json={"name": "Detail Dept"}, headers=headers
+    )
+    assert department_response.status_code == 201, department_response.text
+    department_id = department_response.json()["data"]["id"]
+
+    job_response = await client.post(
+        "/api/jobs",
+        json={
+            "title": "Platform Engineer",
+            "departmentId": department_id,
+            "employmentType": "full_time",
+            "status": "published",
+        },
+        headers=headers,
+    )
+    job = job_response.json()["data"]
+
+    detail_response = await client.get(f"/public/jobs/{job['id']}")
+    assert detail_response.status_code == 200
+    detail = detail_response.json()["data"]
+
+    assert detail["id"] == job["id"]
+    assert detail["departmentId"] == department_id
+    assert detail["status"] == "published"
+    assert detail["applicationEmailTemplateId"] is None
+    assert detail["createdAt"] == job["createdAt"]
+    assert detail["updatedAt"] == job["updatedAt"]
+    assert "hiringTeam" not in detail
+    assert "pipelineStages" not in detail
+    assert "createdBy" not in detail
+
+
 async def test_responses_are_camel_case_matching_the_frontend(client):
     """The TS backend's Drizzle models map snake_case DB columns to camelCase
     TS properties (e.g. `firstName: varchar("first_name")`), and the

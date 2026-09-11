@@ -20,6 +20,7 @@ from app.settings import settings
 from app.shared.integrations import connection_service
 from app.shared.integrations.registry import get_provider_client
 from app.shared.integrations.types import CreateMeetingInput
+from app.shared.schema import to_utc_iso_z
 from app.shared.services import google_calendar_service, mail_service
 from app.shared.time import to_naive_utc
 
@@ -196,10 +197,15 @@ async def schedule_interview(
     # same rule the TS route applies inline (interviews.routes.ts).
     data["stage_id"] = data.get("stage_id") or candidate.current_stage_id or 0
 
-    # Stored as naive-UTC ISO strings so they compare equal to `scheduled_at`
-    # (also naive UTC) once a slot is claimed - see get_by_token/select_slot.
+    # Stored as Z-suffixed UTC ISO strings - matching the TS backend's
+    # `Date.toISOString()` output and app/shared/schema.py's `UtcDatetime`
+    # format - since `time_slots` is a raw JSONB blob Pydantic never
+    # serializes as a modeled datetime field. `to_naive_utc` first so
+    # `to_utc_iso_z` takes its naive-datetime branch (a stable, TZ-less
+    # instant), just like `scheduled_at` once a slot is claimed - see
+    # get_by_token/select_slot.
     time_slots = [
-        {"datetime": to_naive_utc(slot["datetime"]).isoformat(), "selected": slot["selected"]}
+        {"datetime": to_utc_iso_z(to_naive_utc(slot["datetime"])), "selected": slot["selected"]}
         for slot in data.pop("time_slots")
     ]
     public_token = secrets.token_hex(32)
@@ -263,24 +269,28 @@ async def _taken_times(
 
 async def build_public_view(db: AsyncSession, interview: CandidateInterview, taken: set[datetime]) -> dict:
     """Shapes the candidate-facing slot-selection payload - shared by the
-    real public route and its /api-mounted "public in name only" duplicate."""
+    real public route and its /api-mounted "public in name only" duplicate.
+    Matches public.routes.ts's `/interview/:token` response fields exactly
+    (`PublicInterviewOut`): no `location`/`durationMinutes`, but `id`,
+    `meetingUrl` and `tokenExpiresAt` are exposed here."""
     candidate = await db.get(Candidate, interview.candidate_id)
     job = await db.get(Job, interview.job_id)
     assert candidate is not None and job is not None, "guaranteed by the FKs on candidate_interviews"
     time_slots = [
-        {**slot, "taken": datetime.fromisoformat(slot["datetime"]) in taken}
+        {**slot, "taken": to_naive_utc(datetime.fromisoformat(slot["datetime"])) in taken}
         for slot in (interview.time_slots or [])
     ]
     return {
-        "candidate_name": f"{candidate.first_name} {candidate.last_name}",
-        "job_title": job.title,
+        "id": interview.id,
         "event_name": interview.event_name,
         "event_type": interview.event_type,
-        "location": interview.location,
+        "meeting_url": interview.meeting_url,
         "body_text": interview.body_text,
-        "duration_minutes": interview.duration_minutes,
         "time_slots": time_slots,
         "status": interview.status,
+        "token_expires_at": interview.token_expires_at,
+        "candidate_name": f"{candidate.first_name} {candidate.last_name}",
+        "job_title": job.title,
     }
 
 

@@ -93,6 +93,9 @@ class InterviewOut(ApiOutModel):
     status: str
     outcome: InterviewOutcome | None
     public_token: str | None
+    token_expires_at: UtcDatetime | None
+    google_event_id: str | None
+    provider_meeting_id: str | None
     scheduled_at: UtcDatetime | None
     duration_minutes: int | None
     notes: str | None
@@ -102,15 +105,22 @@ class InterviewOut(ApiOutModel):
 
 
 class PublicInterviewOut(ApiModel):
-    candidate_name: str
-    job_title: str
+    """`GET /public/interview/:token` - public.routes.ts lines 162-225. Note
+    this is a different, narrower field set than `InterviewOut`: no
+    `location`/`durationMinutes` (candidates don't need them here), but it
+    does surface `id`, `meetingUrl` and `tokenExpiresAt`, which the internal
+    shape also has."""
+
+    id: int
     event_name: str | None
     event_type: str | None
-    location: str | None
+    meeting_url: str | None
     body_text: str | None
-    duration_minutes: int | None
     time_slots: list[dict]
     status: str
+    token_expires_at: UtcDatetime | None
+    candidate_name: str
+    job_title: str
 
 
 class AllocatedSlotOut(ApiModel):

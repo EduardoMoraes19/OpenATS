@@ -29,7 +29,7 @@ class ApiOutModel(ApiModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-def _to_utc_iso_z(value: datetime) -> str:
+def to_utc_iso_z(value: datetime) -> str:
     """Every `timestamp` column in this schema is WITHOUT TIME ZONE (see
     app/db/models/mixins.py) and always holds a UTC instant in practice, but
     Pydantic's default serializer emits a naive datetime with no offset at
@@ -38,10 +38,15 @@ def _to_utc_iso_z(value: datetime) -> str:
     which the frontend's date parsing depends on - a bare, offset-less
     string is ambiguous and some JS `Date` parsers treat it as local time
     instead of UTC, shifting displayed times by the viewer's UTC offset.
+
+    Public (not underscore-prefixed) because callers that hand-serialize a
+    `datetime` embedded inside a raw JSONB blob (e.g. `time_slots`, which
+    Pydantic never sees as a modeled field) need the identical format -
+    see app/modules/interview/service.py.
     """
     if value.tzinfo is None:
         return value.isoformat(timespec="milliseconds") + "Z"
     return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-UtcDatetime = Annotated[datetime, PlainSerializer(_to_utc_iso_z, return_type=str, when_used="json")]
+UtcDatetime = Annotated[datetime, PlainSerializer(to_utc_iso_z, return_type=str, when_used="json")]

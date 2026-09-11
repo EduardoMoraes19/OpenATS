@@ -8,22 +8,28 @@ service" refactor (see recent commits 7bc617e/93e856a).
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 from fastapi import HTTPException
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import Row, delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.assessments import JobAssessmentAttachment
+from app.db.models.assessments import JobAssessmentAttachment, JobCustomQuestion, JobCustomQuestionOption
+from app.db.models.candidate_activities import CandidateActivity
 from app.db.models.candidates import (
     Candidate,
     CandidateCustomAnswer,
     CandidateCustomAnswerSelection,
+    CandidateCvAnalysis,
     CandidateStageHistory,
 )
 from app.db.models.enums import CandidateActivityType, CandidateStatus, OfferStatus, StageType
+from app.db.models.interviews import CandidateInterview
 from app.db.models.jobs import Job
 from app.db.models.offers import Offer
 from app.db.models.pipeline import JobHiringTeam, JobPipelineStage
+from app.db.models.rejections import CandidateRejection
 from app.logging import get_logger
 from app.modules.assessment_execution import service as assessment_execution_service
 from app.modules.candidate import activity_service
@@ -193,6 +199,141 @@ async def get_candidate(db: AsyncSession, candidate_id: int) -> Candidate:
     if candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return candidate
+
+
+@dataclass
+class CandidateDetail:
+    """Everything candidate.service.ts's `getById` embeds alongside the bare
+    candidate row - one targeted query per relation (not N+1), matching
+    offer/service.py's `_load_relations` pattern used for the same problem
+    on the offer endpoints."""
+
+    candidate: Candidate
+    stage_name: str | None
+    job_title: str | None
+    answers: list[Row]
+    selections: list[Row]
+    history: list[CandidateStageHistory] = field(default_factory=list)
+    offer: Offer | None = None
+    cv_analysis: CandidateCvAnalysis | None = None
+    rejections: list[CandidateRejection] = field(default_factory=list)
+    interviews: list[Row] = field(default_factory=list)
+    activities: list[Row] = field(default_factory=list)
+
+
+async def get_candidate_detail(db: AsyncSession, candidate_id: int) -> CandidateDetail:
+    candidate = await get_candidate(db, candidate_id)
+
+    stage_job_row = (
+        await db.execute(
+            select(JobPipelineStage.name, Job.title)
+            .select_from(Candidate)
+            .outerjoin(JobPipelineStage, Candidate.current_stage_id == JobPipelineStage.id)
+            .outerjoin(Job, Candidate.job_id == Job.id)
+            .where(Candidate.id == candidate_id)
+        )
+    ).first()
+    stage_name, job_title = tuple(stage_job_row) if stage_job_row is not None else (None, None)
+
+    answers = list(
+        (
+            await db.execute(
+                select(CandidateCustomAnswer, JobCustomQuestion.title)
+                .outerjoin(JobCustomQuestion, CandidateCustomAnswer.question_id == JobCustomQuestion.id)
+                .where(CandidateCustomAnswer.candidate_id == candidate_id)
+            )
+        ).all()
+    )
+
+    selections = list(
+        (
+            await db.execute(
+                select(CandidateCustomAnswerSelection, JobCustomQuestion.title, JobCustomQuestionOption.label)
+                .outerjoin(
+                    JobCustomQuestion, CandidateCustomAnswerSelection.question_id == JobCustomQuestion.id
+                )
+                .outerjoin(
+                    JobCustomQuestionOption,
+                    CandidateCustomAnswerSelection.option_id == JobCustomQuestionOption.id,
+                )
+                .where(CandidateCustomAnswerSelection.candidate_id == candidate_id)
+            )
+        ).all()
+    )
+
+    history = list(
+        (
+            await db.execute(
+                select(CandidateStageHistory)
+                .where(CandidateStageHistory.candidate_id == candidate_id)
+                .order_by(CandidateStageHistory.moved_at.asc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    # Scoped to (candidate_id, job_id), not candidate_id alone - matches
+    # candidate.service.ts's getById exactly (a candidate could in theory
+    # have offers from a prior job, per the schema, though the app never
+    # actually re-applies a candidate to a second job today).
+    offer = (
+        await db.execute(
+            select(Offer).where(Offer.candidate_id == candidate_id, Offer.job_id == candidate.job_id)
+        )
+    ).scalar_one_or_none()
+
+    cv_analysis = (
+        await db.execute(select(CandidateCvAnalysis).where(CandidateCvAnalysis.candidate_id == candidate_id))
+    ).scalar_one_or_none()
+
+    rejections = list(
+        (
+            await db.execute(
+                select(CandidateRejection)
+                .where(CandidateRejection.candidate_id == candidate_id)
+                .order_by(CandidateRejection.rejected_at.desc())
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    interviews = list(
+        (
+            await db.execute(
+                select(CandidateInterview, JobPipelineStage.stage_type)
+                .outerjoin(JobPipelineStage, CandidateInterview.stage_id == JobPipelineStage.id)
+                .where(CandidateInterview.candidate_id == candidate_id)
+                .order_by(CandidateInterview.created_at.desc())
+            )
+        ).all()
+    )
+
+    activities = list(
+        (
+            await db.execute(
+                select(CandidateActivity, JobPipelineStage)
+                .outerjoin(JobPipelineStage, CandidateActivity.stage_id == JobPipelineStage.id)
+                .where(CandidateActivity.candidate_id == candidate_id)
+                .order_by(CandidateActivity.created_at.desc())
+            )
+        ).all()
+    )
+
+    return CandidateDetail(
+        candidate=candidate,
+        stage_name=stage_name,
+        job_title=job_title,
+        answers=answers,
+        selections=selections,
+        history=history,
+        offer=offer,
+        cv_analysis=cv_analysis,
+        rejections=rejections,
+        interviews=interviews,
+        activities=activities,
+    )
 
 
 async def update_basic_details(
