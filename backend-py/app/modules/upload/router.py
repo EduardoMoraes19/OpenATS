@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,7 +40,7 @@ async def _read_and_validate(file: UploadFile, *, allowed_types: set[str]) -> tu
 @router.post("/resume", response_model=UploadOut)
 async def upload_resume(file: UploadFile) -> UploadOut:
     content, content_type = await _read_and_validate(file, allowed_types={"application/pdf"})
-    url = r2_service.upload_file(content=content, content_type=content_type, folder="resumes")
+    url = await asyncio.to_thread(r2_service.upload_file, content=content, content_type=content_type, folder="resumes")
     return UploadOut(url=url, filename=file.filename or "", mimetype=content_type, size=len(content))
 
 
@@ -47,7 +49,7 @@ async def upload_logo(
     file: UploadFile, company_id: int | None = Query(default=None), db: AsyncSession = Depends(get_db)
 ) -> UploadOut:
     content, content_type = await _read_and_validate(file, allowed_types=_ALLOWED_LOGO_TYPES)
-    url = r2_service.upload_file(content=content, content_type=content_type, folder="logos")
+    url = await asyncio.to_thread(r2_service.upload_file, content=content, content_type=content_type, folder="logos")
 
     if company_id is not None:
         company = await db.get(Company, company_id)

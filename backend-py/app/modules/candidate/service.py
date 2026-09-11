@@ -8,6 +8,7 @@ service" refactor (see recent commits 7bc617e/93e856a).
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 
 from fastapi import HTTPException
@@ -353,7 +354,7 @@ async def update_basic_details(
     # Only delete the old file once the new one is confirmed stored - never
     # delete-before-confirm, matching candidate.controller.ts's ordering.
     if new_resume_url is not None and old_resume_url is not None and old_resume_url != new_resume_url:
-        r2_service.delete_by_url(old_resume_url)
+        await asyncio.to_thread(r2_service.delete_by_url, old_resume_url)
 
     return candidate
 

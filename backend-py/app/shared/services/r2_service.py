@@ -45,7 +45,13 @@ def _build_client(endpoint: str):
         aws_access_key_id=settings.r2_access_key_id,
         aws_secret_access_key=settings.r2_secret_access_key,
         region_name="us-east-1",  # arbitrary/ignored by R2
-        config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "path"},
+            connect_timeout=5,
+            read_timeout=10,
+            retries={"max_attempts": 2},
+        ),
     )
 
 

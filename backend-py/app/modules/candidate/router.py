@@ -6,6 +6,7 @@ r2_service.sign_url - never inside the service layer.
 
 from __future__ import annotations
 
+import asyncio
 from math import ceil
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -290,7 +291,9 @@ async def update_candidate(
         content = await resume.read()
         if len(content) > _MAX_RESUME_BYTES:
             raise HTTPException(status_code=400, detail="Resume must be 10MB or smaller")
-        new_resume_url = r2_service.upload_file(content=content, content_type=resume.content_type, folder="resumes")
+        new_resume_url = await asyncio.to_thread(
+            r2_service.upload_file, content=content, content_type=resume.content_type, folder="resumes"
+        )
 
     candidate = await service.update_basic_details(db, candidate_id, data=data, new_resume_url=new_resume_url)
 
