@@ -1,1 +1,0 @@
-ALTER TABLE "candidate_interviews" ADD COLUMN "token_expires_at" timestamp;

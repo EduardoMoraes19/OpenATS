@@ -7,7 +7,7 @@ export const TEXTAREA_CLASS =
 export const LABEL_CLASS =
   "text-xs font-medium text-slate-500 dark:text-neutral-400";
 
-// Keep in sync with backend/src/services/variable.service.ts
+// Keep in sync with backend-py/app/modules/template/variable_service.py
 export const VARS = [
   "candidate_name",
   "job_title",

@@ -1,1 +1,0 @@
-ALTER TABLE "candidate_interviews" ADD COLUMN "provider_meeting_id" varchar(255);

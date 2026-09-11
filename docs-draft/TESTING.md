@@ -4,17 +4,14 @@ OpenATS uses three layers of automated tests: unit tests for pure logic, integra
 
 ## 1. Testing stack
 
-Only two test tools are used across the whole project.
+| Tool | Used for |
+| --- | --- |
+| [pytest](https://docs.pytest.org) + [pytest-asyncio](https://pytest-asyncio.readthedocs.io) | Unit and integration tests (backend-py) |
+| [httpx](https://www.python-httpx.org) (`ASGITransport`) | Sending HTTP requests directly into the FastAPI app inside integration tests, no server process needed |
+| [Vitest](https://vitest.dev) + Testing Library | Unit and component tests (frontend) |
+| [Playwright](https://playwright.dev) | End-to-end tests in a real browser |
 
-| Tool | Version | Used for |
-| --- | --- | --- |
-| [Vitest](https://vitest.dev) | 4.x | Unit and integration tests (backend) |
-| [Supertest](https://github.com/ladjs/supertest) | 7.x | Sending HTTP requests to the Express app inside integration tests |
-| [Playwright](https://playwright.dev) | 1.x | End-to-end tests in a real browser |
-
-Vitest is used instead of Jest because it has native TypeScript and ESM support, which matters since the project is TypeScript throughout. Playwright is used instead of Selenium or Cypress because it can start the app itself, drives a real browser, and ships with a built-in debugging UI.
-
-There is deliberately no separate assertion library, no Selenium, and no Cypress. Vitest and Playwright cover every layer.
+Playwright is used instead of Selenium or Cypress because it can start the app itself, drives a real browser, and ships with a built-in debugging UI.
 
 ## 2. The three types of tests
 
@@ -22,31 +19,30 @@ There is deliberately no separate assertion library, no Selenium, and no Cypress
 
 A unit test checks one function on its own. No database, no network, no browser. You give it an input and check the output.
 
-```ts
-// backend/tests/unit/object.util.test.ts
-expect(cleanObject({ a: 1, b: undefined })).toEqual({ a: 1 });
+```python
+# backend-py/tests/unit/test_scoring.py
+assert score_cv(parsed_cv, JobRequirements(skills=[])).match_score == 100
 ```
 
-These run in milliseconds and tell you exactly which function is broken. Use them for pure logic such as formatting, validation rules, parsing, and calculations.
+These run in milliseconds and tell you exactly which function is broken. Use them for pure logic such as formatting, validation rules, parsing, and calculations - `scoring.py`'s CV-match algorithm is the densest example in the codebase.
 
 ### Integration tests
 
-An integration test checks several real parts working together: a route, its controller, its service, and a **real Postgres database**. Supertest sends a genuine HTTP request into the Express app.
+An integration test checks several real parts working together: a route, its service, and a **real Postgres database**. `httpx.AsyncClient` with `ASGITransport` sends a genuine ASGI request into the FastAPI app - no server process binds to a port.
 
-```ts
-// backend/tests/integration/health.test.ts
-const res = await request(app).get("/health");
-expect(res.status).toBe(200);
-expect(res.body.checks).toMatchObject({ db: "ok", redis: "ok" });
+```python
+# backend-py/tests/integration/test_core_flows.py
+async def test_health_reports_db_and_redis_ok(client):
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json()["checks"] == {"db": "ok", "redis": "ok"}
 ```
 
-These catch what unit tests cannot: real SQL errors, wrong column names, broken migrations, and middleware in the wrong order. Use them for anything that touches the database.
-
-Note that no server is started on port 8080. Supertest imports the Express app directly and binds it to a random free port for the duration of each request, so integration tests never conflict with a running dev server.
+These catch what unit tests cannot: real SQL errors, wrong column names, broken migrations, and dependency-order bugs (see `app/shared/auth/deps.py` for why decorator-level `dependencies=[]` matters). Use them for anything that touches the database.
 
 ### End-to-end (E2E) tests
 
-An E2E test opens a real browser and uses the app the way a person would. The whole stack runs: Next.js frontend, Express backend, and Postgres.
+An E2E test opens a real browser and uses the app the way a person would. The whole stack runs: Next.js frontend, FastAPI backend, and Postgres.
 
 ```ts
 // e2e/careers.spec.ts
@@ -68,18 +64,17 @@ OpenATS/
 │   └── careers.spec.ts
 ├── playwright.config.ts          Playwright config (repo root)
 ├── tsconfig.json                 TypeScript config covering e2e/ only
-└── backend/
-    ├── vitest.config.mts         Vitest config
-    ├── .env.test                 Test database connection
+└── backend-py/
+    ├── pyproject.toml            pytest config lives under [tool.pytest.ini_options]
+    ├── .env.test                 Test database connection (committed, dummy values only)
     └── tests/
-        ├── setup.ts              Loads .env.test before tests run
+        ├── conftest.py           The `client` fixture, `make_bearer_token`, per-test DB cleanup
         ├── unit/
         └── integration/
+            └── helpers.py        Shared setup helpers (create_job, apply_candidate, ...)
 ```
 
-Playwright lives at the repo root because an E2E test spans both `backend/` and `frontend/`, so it belongs to neither package. Vitest lives inside `backend/` because its tests import backend source files directly.
-
-The Vitest config file is `vitest.config.mts` and not `.ts`. The backend is a CommonJS package (no `"type": "module"` in its `package.json`), so the `.mts` extension is required for the config to load as an ES module.
+Playwright lives at the repo root because an E2E test spans both `backend-py/` and `frontend/`, so it belongs to neither package.
 
 ## 4. Databases used by tests
 
@@ -92,43 +87,49 @@ There are two Postgres containers, both defined in the root `docker-compose.yml`
 | `openats-postgres` | 5432 | `openats` | Persistent volume | Normal development |
 | `openats-postgres-test` | 5433 | `openats_test` | `tmpfs` (in memory) | Integration tests and E2E tests |
 
-The test database uses `tmpfs`, so its data lives in memory and is wiped whenever the container restarts. That is intentional. Test data should never survive a restart.
+The test database uses `tmpfs`, so its data lives in memory and is wiped whenever the container restarts. That is intentional - and it means the schema has to be re-migrated after every container restart (see "First time setup" below).
 
-**Integration tests** get the test database through `backend/tests/setup.ts`, which loads `backend/.env.test` with `override: true`. The `override` flag is essential. Without it the regular `backend/.env` would win and tests would run against your development database.
+**Integration tests** refuse to run against anything else: `tests/conftest.py` raises at import time unless `DATABASE_URL` contains `_test` or `:5433`, so a misconfigured run fails loudly instead of quietly truncating your dev data (every test truncates every app table beforehand via an autouse fixture).
 
 **E2E tests** get the test database through `playwright.config.ts`, which passes `DATABASE_URL` to the servers it starts:
 
 ```ts
 webServer: {
-  command: "pnpm dev",
+  command: "make dev",
   reuseExistingServer: false,
-  env: { DATABASE_URL: "postgresql://openats:openats@localhost:5433/openats_test" },
+  env: { DATABASE_URL: "postgresql+asyncpg://openats:openats@localhost:5433/openats_test" },
 }
 ```
 
-This works because `backend/src/server.ts` uses `import "dotenv/config"`, and dotenv does not override environment variables that are already set.
+This works because `backend-py/app/settings.py` uses `pydantic-settings`, which does not let its `env_file=".env"` default override a `DATABASE_URL` that is already set in the process environment.
 
-> ⚠️ `reuseExistingServer` is set to `false` on purpose. If it were enabled and you already had `make dev` running, Playwright would attach to that server instead of starting its own, and that server reads `backend/.env`. The `DATABASE_URL` above would be silently ignored and the whole suite would quietly run against your development database. Stop `make dev` before running E2E tests.
+> ⚠️ `reuseExistingServer` is set to `false` on purpose. If it were enabled and you already had `make dev` running, Playwright would attach to that server instead of starting its own, and that server reads `backend-py/.env`. The `DATABASE_URL` above would be silently ignored and the whole suite would quietly run against your development database. Stop `make dev` before running E2E tests.
 
 ### Redis
 
-Redis is currently shared between development, integration tests, and E2E tests on port 6379. This is fine today because no test exercises the BullMQ CV analysis queue. Once tests do cover the queue, use a separate database index (`redis://localhost:6379/1`) or add a dedicated `redis-test` container, otherwise a job enqueued by a test could be picked up by your development worker.
+Redis is currently shared between development, integration tests, and E2E tests on port 6379. Integration tests clean up only their own `ratelimit:*` keys between runs (see `_clean_rate_limits` in `conftest.py`) rather than flushing the whole instance, specifically so this sharing stays safe. If a test starts exercising the CV analysis queue for real, give it a dedicated Redis database index (`redis://localhost:6379/1`) instead, so a job enqueued by a test can't be picked up by your development worker.
 
 ## 5. First time setup
 
-Install dependencies from the repo root:
+Install dependencies:
 
 ```bash
 pnpm install
 pnpm exec playwright install chromium
+
+cd backend-py
+python3 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
+cd ..
 ```
 
 Start the test database and apply the schema to it:
 
 ```bash
 docker compose up -d postgres-test
-cd backend
-DATABASE_URL=postgresql://openats:openats@localhost:5433/openats_test pnpm drizzle-kit migrate
+cd backend-py
+DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/alembic upgrade head
+cd ..
 ```
 
 > ⚠️ Note the port is **5433**, not 5432. Using 5432 here points the migration at your development database instead.
@@ -141,15 +142,26 @@ docker exec openats-postgres-test psql -U openats -d openats_test -c '\dt'
 
 ## 6. Running the tests
 
-### Unit and integration tests
+### Backend unit and integration tests
 
 ```bash
-pnpm test          # run once
-pnpm test:watch    # re-run on file changes
-make test          # same as pnpm test
+cd backend-py
+DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/pytest tests/ -q
+```
+
+or, from the repo root:
+
+```bash
+make test     # backend (pytest) and frontend (vitest)
 ```
 
 These can run at the same time as `make dev`. They never bind to port 8080.
+
+### Frontend unit tests
+
+```bash
+pnpm test:frontend
+```
 
 ### End-to-end tests
 
@@ -161,7 +173,7 @@ pnpm test:e2e
 make test-e2e      # same as pnpm test:e2e
 ```
 
-Playwright starts the backend on port 8080 and the frontend on port 3000 itself, runs the specs, then shuts them down. If either port is already in use you will get an `EADDRINUSE` error, which means `make dev` is still running.
+Playwright starts the backend on port 8080 and the frontend on port 3000 itself (via `make dev`), runs the specs, then shuts them down. If either port is already in use you will get an `EADDRINUSE` error, which means `make dev` is still running.
 
 ### Type checking the E2E tests
 
@@ -175,21 +187,24 @@ pnpm exec tsc --noEmit
 
 Decide which layer the test belongs to:
 
-- Testing a single function with no database? Put it in `backend/tests/unit/`.
-- Testing a route, a service, or a Drizzle query? Put it in `backend/tests/integration/`.
+- Testing a single function with no database? Put it in `backend-py/tests/unit/`.
+- Testing a route, a service, or a SQLAlchemy query? Put it in `backend-py/tests/integration/`.
 - Testing something a user sees or clicks in the browser? Put it in `e2e/`.
 
-Vitest picks up any file matching `tests/**/*.test.ts`. Playwright picks up any file in `e2e/`.
+pytest picks up any file matching `tests/**/test_*.py`. Playwright picks up any file in `e2e/`.
 
-Integration tests share one database, so `fileParallelism` is disabled in `vitest.config.mts` to stop test files racing each other.
+Integration tests share one database, and each one's autouse `_clean_database` fixture truncates every app table first - write tests assuming a clean slate, not assuming anything an earlier test left behind. Use `tests/integration/helpers.py`'s functions (`create_job`, `apply_candidate`, `manager_headers`, ...) instead of re-deriving the same multi-step setup in every test file.
+
+For a new external dependency (R2, Gemini, the Google OAuth client), monkeypatch it at the boundary the code already calls through - see `test_upload.py` (`monkeypatch.setattr(r2_service, "upload_file", ...)`) or `test_integrations.py` (`monkeypatch.setitem(registry._REGISTRY, ...)`) for the pattern. Everything on the FastAPI side of that boundary still runs for real.
 
 ## 8. Debugging a failing test
 
-For Vitest, run a single file:
+For pytest, run a single file or a single test:
 
 ```bash
-cd backend
-pnpm vitest run tests/integration/health.test.ts
+cd backend-py
+DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/pytest tests/integration/test_core_flows.py -q
+DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/pytest tests/integration/test_core_flows.py::test_health_reports_db_and_redis_ok -v
 ```
 
 For Playwright, the interactive UI is the best tool. It shows a snapshot of the page at every step:
@@ -217,6 +232,6 @@ A concrete example from this project: the careers page catches its own fetch err
 
 ## 10. Things to be aware of
 
-- The E2E suite runs against an empty test database. Once you write tests that need job listings, candidates, or pipeline stages, seed the test database first (`pnpm tsx src/db/seed.ts` with `DATABASE_URL` pointed at port 5433) or insert fixtures in a Playwright `beforeAll`.
-- Frontend unit tests use their own Vitest install inside `frontend/` (jsdom + Testing Library), configured by `frontend/vitest.config.mts`. Run them with `pnpm test:frontend`, or `pnpm test` at the root, which runs backend and frontend in turn.
-- Authenticated E2E tests are not set up. Logging in through WSO2 Asgardeo in a test means driving a hosted identity provider, which needs real credentials and is slow and flaky. Prefer testing `/public/*` routes, which skip authentication entirely, or save a Playwright `storageState` from one manual login and reuse it.
+- The E2E suite runs against an empty test database. Once you write tests that need job listings, candidates, or pipeline stages, seed the test database first (`cd backend-py && DATABASE_URL=... .venv/bin/python -m app.db.seed`, pointed at port 5433) or insert fixtures in a Playwright `beforeAll`.
+- Frontend unit tests use their own Vitest install inside `frontend/` (jsdom + Testing Library), configured by `frontend/vitest.config.mts`. Run them with `pnpm test:frontend`.
+- Authenticated E2E tests are not set up yet. Auth here is self-hosted JWT (see `backend-py/app/shared/auth/jwt_auth.py`), not a hosted identity provider, so this is more tractable than it used to be - a Playwright test could log in through the real `/login` form, or a fixture could mint a token directly with `create_access_token` and save it as browser storage state. Prefer testing `/public/*` routes for now, which skip authentication entirely.

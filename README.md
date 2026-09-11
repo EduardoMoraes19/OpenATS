@@ -104,7 +104,6 @@ Two independent packages - not a monorepo, no shared `package.json` or lockfile.
 | `backend-py/app/queues/cv_analysis`  | The arq queue, worker, and event bridge for background CV scoring                                                          |
 | `backend-py/app/db/models`           | SQLAlchemy models, one file per domain                                                                                     |
 | `backend-py/app/alembic/versions`    | Generated migration files - always committed, never hand-edited                                                            |
-| `backend/`                           | The original TypeScript/Express implementation, kept for reference during the migration to `backend-py/`                  |
 | `e2e/`                               | Playwright end-to-end tests, at the root because they span both packages                                                   |
 | `docs/`                              | [Auth setup](./docs-draft/IAM_SETUP.md), [testing guide](./docs-draft/TESTING.md), [road to GA](./docs-draft/GA_ROADMAP.md) |
 

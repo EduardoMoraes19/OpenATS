@@ -9,34 +9,8 @@ on:
   workflow_call:
 
 jobs:
-  test:
+  test-frontend:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: openats
-          POSTGRES_PASSWORD: openats
-          POSTGRES_DB: openats_test
-        # 5433 on the runner to match backend/.env.test
-        ports:
-          - 5433:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -54,32 +28,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Backend only. The frontend still has lint errors, so the root `lint`
-      # script would fail every run until those are cleared.
-      - name: Lint backend
-        run: pnpm --filter ./backend lint
+      - name: Lint
+        run: pnpm --filter ./frontend lint
 
-      - name: Apply migrations to the test database
-        working-directory: backend
-        env:
-          DATABASE_URL: postgresql://openats:openats@localhost:5433/openats_test
-        run: pnpm drizzle-kit migrate
-
-      - name: Run unit and integration tests
-        run: pnpm test
+      - name: Run unit tests
+        run: pnpm --filter ./frontend test:run
 
       - name: Type-check end-to-end specs
         run: pnpm exec tsc --noEmit
 
-      # The test files are excluded from the build, so nothing else checks them.
-      - name: Type-check backend tests
-        working-directory: backend
-        run: pnpm exec tsc --noEmit -p tsconfig.test.json
-
-      - name: Build backend
-        run: pnpm --filter ./backend build
-
-  test-backend-py:
+  test-backend:
     runs-on: ubuntu-latest
 
     services:
@@ -126,8 +84,8 @@ jobs:
       - name: Install dependencies
         run: pip install -e ".[dev]"
 
-      # backend-py/.env.test is committed on purpose, like backend/.env.test -
-      # it holds no secrets, only dummy values, so PRs from forks can run it.
+      # backend-py/.env.test is committed on purpose - it holds no secrets,
+      # only dummy values, so PRs from forks can run it.
       - name: Use the test env file
         run: cp .env.test .env
 

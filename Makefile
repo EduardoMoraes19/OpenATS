@@ -16,7 +16,7 @@
 
 setup:
 	@echo "📦 Installing frontend dependencies..."
-	pnpm --filter ./frontend install
+	corepack pnpm --filter ./frontend install
 	@echo ""
 	@echo "🐍 Setting up the backend virtualenv (backend-py)..."
 	@cd backend-py && python3 -m venv .venv && .venv/bin/pip install -q -e ".[dev]"
@@ -88,26 +88,28 @@ create-admin:
 	cd backend-py && .venv/bin/python -m app.db.create_admin --email "$$email" --password "$$password" --first-name "$$first" --last-name "$$last"
 
 dev: infra-up
-	pnpm exec concurrently -n backend,frontend -c blue,green \
+	corepack pnpm exec concurrently -n backend,frontend -c blue,green \
 		"cd backend-py && .venv/bin/uvicorn app.main:asgi_app --reload --port 8080" \
-		"pnpm --filter ./frontend dev"
+		"corepack pnpm --filter ./frontend dev"
 
 worker:
 	cd backend-py && .venv/bin/python -m app.worker_main
 
 build:
-	pnpm --filter ./frontend build
+	corepack pnpm --filter ./frontend build
 
 lint:
-	pnpm --filter ./frontend lint
+	corepack pnpm --filter ./frontend lint
 	cd backend-py && .venv/bin/ruff check app
 
 clean:
 	rm -rf node_modules frontend/node_modules backend-py/.venv
 
 test:
-	cd backend-py && .venv/bin/pytest tests/ -q
-	pnpm test:frontend
+	# Explicit DATABASE_URL, not whatever backend-py/.env happens to have -
+	# tests must never run against the dev database regardless of local config.
+	cd backend-py && DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/pytest tests/ -q
+	corepack pnpm --filter ./frontend test:run
 
 test-e2e:
-	pnpm test:e2e
+	corepack pnpm test:e2e

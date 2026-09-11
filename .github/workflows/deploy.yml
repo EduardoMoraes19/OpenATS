@@ -5,7 +5,9 @@ on:
     branches:
       - main
     paths:
-      - "backend/**"
+      - "backend-py/**"
+      - "Dockerfile.backend-py"
+      - "docker-entrypoint-py.sh"
 
 jobs:
   # Deploy only runs if the full test suite passes.
@@ -32,9 +34,6 @@ jobs:
             # command sets the exit code.
             set -e
 
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" || true
-
             cd /home/azureuser/OpenATS
 
             # reset --hard, not pull: any local drift on the VM makes a merge
@@ -42,13 +41,37 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Single pnpm workspace, so install from the repo root.
-            pnpm install --frozen-lockfile
-            pnpm --filter ./backend build
-            pnpm --filter ./backend exec drizzle-kit migrate
+            # backend-py/.env holds the real production secrets (SECRET_KEY,
+            # DATABASE_URL, R2_*, RESEND_*, GEMINI_API_KEY, ...) and is never
+            # created or touched by this deploy - it must already exist on
+            # the VM (carried over from the pm2/Node deploy this replaced).
+            if [ ! -f backend-py/.env ]; then
+              echo "backend-py/.env is missing on the VM. Create it (see backend-py/.env.example) before the next deploy."
+              exit 1
+            fi
 
-            pm2 restart ecosystem.config.js --update-env
-            pm2 save
+            docker build -f Dockerfile.backend-py -t openats-backend-py:latest .
+
+            docker stop openats-api openats-worker >/dev/null 2>&1 || true
+            docker rm openats-api openats-worker >/dev/null 2>&1 || true
+
+            # --network host: DATABASE_URL/REDIS_URL in backend-py/.env are
+            # whatever they were for the old bare pm2/Node process (localhost
+            # or an external host) - host networking keeps that working
+            # unchanged, without assuming Postgres/Redis run in Docker here.
+            docker run -d --name openats-api \
+              --network host \
+              --env-file backend-py/.env \
+              -e RUN_MIGRATIONS=true \
+              --restart unless-stopped \
+              openats-backend-py:latest
+
+            docker run -d --name openats-worker \
+              --network host \
+              --env-file backend-py/.env \
+              --restart unless-stopped \
+              openats-backend-py:latest \
+              arq app.queues.cv_analysis.tasks.WorkerSettings
 
             # Fail the deploy if the app did not come back up.
             sleep 5

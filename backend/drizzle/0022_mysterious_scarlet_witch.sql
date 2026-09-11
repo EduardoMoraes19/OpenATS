@@ -1,2 +1,0 @@
-ALTER TABLE "jobs" ADD COLUMN "application_email_template_id" integer;--> statement-breakpoint
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_application_email_template_id_templates_id_fk" FOREIGN KEY ("application_email_template_id") REFERENCES "public"."templates"("id") ON DELETE set null ON UPDATE no action;

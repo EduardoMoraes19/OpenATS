@@ -1,6 +1,6 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 
-// Matches the pill-button look in backend/src/services/mail.service.ts (emailButton).
+// Matches the pill-button look in backend-py/app/modules/template/template_engine_service.py (emailButton).
 const BUTTON_STYLE =
   "display:inline-block;background:#0a0a0a;color:#ffffff;padding:10px 24px;border-radius:9999px;font-size:14px;font-weight:600;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
 

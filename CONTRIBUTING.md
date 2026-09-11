@@ -68,11 +68,6 @@ make --version
 - SQLAlchemy 2.0 + Alembic (database ORM and migrations)
 - Self-hosted JWT auth (bcrypt password hashing, HS256 tokens)
 
-The `backend/` directory holds the original TypeScript/Express implementation.
-It's kept around for reference while `backend-py/` proves out, but it's not
-part of the day-to-day dev flow below - `frontend/` only authenticates against
-`backend-py/`.
-
 **Package Manager:** pnpm for `frontend/`; a standard Python virtualenv (`pip`) for `backend-py/`
 
 ## Quick Start (Recommended)
