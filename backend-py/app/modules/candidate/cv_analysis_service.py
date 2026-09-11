@@ -95,7 +95,7 @@ async def run_analysis(db: AsyncSession, candidate_id: int, job_id: int, resume_
     key = r2_service.extract_key_from_url(resume_url)
     if key is None:
         raise ValueError(f"resume_url is not a valid R2 url: {resume_url}")
-    pdf_bytes = r2_service.download_file(key)
+    pdf_bytes = await asyncio.to_thread(r2_service.download_file, key)
 
     parsed_cv, (description, job_requirements) = await asyncio.gather(
         parse_cv_with_gemini(pdf_bytes), _job_requirements(db, job_id)
