@@ -65,6 +65,27 @@ The focus of this phase is correctness and safety, not new features. Nothing her
 
 ---
 
+## Backend rewrite: Python (FastAPI)
+
+`backend-py/` is a from-scratch port of `backend/` to FastAPI + SQLAlchemy +
+Alembic, built module-for-module against the same 33-table Postgres schema.
+Not yet the default - `backend/` is still what `deploy.yml` ships - but this
+is the intended eventual replacement, not a spike.
+
+| Item | Why it matters | Status |
+| --- | --- | --- |
+| All 18 business modules ported | company, user, job, pipeline, hiring-team, custom-question, candidate, assessment, assessment-execution, offer, template, rejection, interview, integrations, chat, report, settings, upload. | 🟢 Done |
+| Self-hosted JWT auth (backend + frontend) | Replaced Asgardeo entirely - bcrypt password hashes, HS256 tokens, `token_version` for session invalidation. `frontend/` now only speaks to `backend-py/`; it no longer carries any Asgardeo dependency. | 🟢 Done |
+| Cross-parity HTTP harness | Ran the same sequence of authenticated calls against both backends against identical seeded data and diffed responses field-by-field. Found and fixed 11 real wire-format divergences (public job/offer shapes, interview fields, candidate detail composition, a report date-boundary bug). | 🟢 Done |
+| Socket.IO live parity check | Connected a real `socket.io` client to both backends with equivalent JWTs, joined rooms, sent chat messages, and diffed the emitted events. Found and fixed one real bug: chat `sentAt` was missing the `Z` suffix the frontend's date parsing depends on. | 🟢 Done |
+| CI for `backend-py` | `test.yml` now runs `ruff`, `mypy`, and the full `pytest` suite on every PR, in parallel with the existing TS job. Before this, a regression here would only surface if someone ran the tests locally. | 🟢 Done |
+| `Dockerfile.backend-py` build verified | Built the image and ran both the API and the arq worker command against a real Postgres/Redis - migrations apply, health check passes, worker connects. Never confirmed to actually run before this. | 🟢 Done |
+| Test coverage for `hiring_team`, `upload`, `integrations`/OAuth | Zero tests in any of these modules, in the harness or in `pytest`. | 🔴 Planned |
+| Test coverage for the CV analysis worker | Only the scoring math (`test_scoring.py`) is tested. The arq task itself - R2 download, the two Gemini calls, retry/backoff, the Redis event publish - has never run in an automated test. | 🔴 Planned |
+| Cutover decision (retire `backend/`) | Blocked on the two coverage gaps above. Already urgent: `backend/`'s Drizzle schema still queries a `users.asgardeo_user_id` column that `backend-py`'s auth migration (`0002_local_auth`) drops, so **every authenticated `backend/` request now crashes with a 500 against any database that has run that migration** - discovered live while building the Socket.IO parity check above. The two backends can no longer share a database at all, not just an auth token. Once the coverage gaps close, decide whether `backend-py` becomes the deployed backend and `backend/` is removed, or the two keep running against separate databases for longer. | 🔴 Planned |
+
+---
+
 ## v1.0.0 - General availability
 
 The "do it properly" phase. None of this is urgent, all of it is what separates a working project from one people rely on.
