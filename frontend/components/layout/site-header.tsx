@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Inter_Tight } from "next/font/google";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Notification03Icon } from "@hugeicons/core-free-icons";
@@ -22,13 +21,6 @@ export function SiteHeader() {
           href="/"
           className={`${interTight.className} flex items-center gap-2 text-2xl leading-none tracking-tight text-black dark:text-white select-none`}
         >
-          <Image
-            src="/assets/openats-logo.png"
-            alt="featTalent"
-            width={32}
-            height={32}
-            className="size-8 object-contain dark:brightness-0 dark:invert"
-          />
           featTalent
         </Link>
 
