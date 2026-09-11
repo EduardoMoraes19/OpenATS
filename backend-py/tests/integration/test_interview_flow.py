@@ -41,8 +41,8 @@ async def _expire_token(token: str) -> None:
         await session.commit()
 
 
-async def test_schedule_interview_then_public_select_slot(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_schedule_interview_then_public_select_slot(client):
+    headers = await manager_headers()
     interviewer_id = await _interviewer_id(client, headers)
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
@@ -81,11 +81,11 @@ async def test_schedule_interview_then_public_select_slot(client, rsa_keypair):
     assert body["slot"]["datetime"] == public_body["timeSlots"][0]["datetime"]
 
 
-async def test_selecting_a_slot_twice_is_rejected_as_conflict(client, rsa_keypair):
+async def test_selecting_a_slot_twice_is_rejected_as_conflict(client):
     """The atomic UPDATE ... WHERE status='pending_schedule' claim must
     reject a second selection attempt on the same interview token - this is
     the double-booking guard."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     interviewer_id = await _interviewer_id(client, headers)
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
@@ -115,12 +115,12 @@ async def test_selecting_a_slot_twice_is_rejected_as_conflict(client, rsa_keypai
     assert second.json().get("code") is None, "the 'already scheduled' conflict is a plain error, not SLOT_TAKEN"
 
 
-async def test_selecting_a_taken_slot_on_another_interview_is_rejected(client, rsa_keypair):
+async def test_selecting_a_taken_slot_on_another_interview_is_rejected(client):
     """Two different interviews, same interviewer, an overlapping time slot:
     confirming the slot on the first interview must make it unavailable on
     the second - the cross-interview `takenTimes` collision check, distinct
     from the same-interview double-booking guard above."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     interviewer_id = await _interviewer_id(client, headers)
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
@@ -155,8 +155,8 @@ async def test_selecting_a_taken_slot_on_another_interview_is_rejected(client, r
     assert second.json()["code"] == "SLOT_TAKEN"
 
 
-async def test_selecting_a_slot_on_an_expired_link_is_rejected(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_selecting_a_slot_on_an_expired_link_is_rejected(client):
+    headers = await manager_headers()
     interviewer_id = await _interviewer_id(client, headers)
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
@@ -185,8 +185,8 @@ async def test_selecting_a_slot_on_an_expired_link_is_rejected(client, rsa_keypa
     assert select_response.json()["error"] == "This scheduling link has expired"
 
 
-async def test_direct_create_interview_and_feedback_crud(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_direct_create_interview_and_feedback_crud(client):
+    headers = await manager_headers()
     interviewer_id = await _interviewer_id(client, headers)
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])

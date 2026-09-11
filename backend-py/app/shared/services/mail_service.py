@@ -6,10 +6,20 @@ caller's point of view, and callers that want fire-and-forget behavior wrap
 the call themselves (e.g. `asyncio.create_task(...)` with its own
 try/except), matching how the TS controllers `.catch()` + log instead of
 blocking the response.
+
+Every public function here is `async` even though the underlying `resend`
+client is a blocking, synchronous HTTP client: unlike Node (where `await
+fetch(...)` never blocks the event loop), calling a synchronous network
+client directly from an `async def` route handler in Python blocks the
+*entire* asyncio event loop for the duration of the call - every other
+in-flight request stalls until Resend's API responds. `asyncio.to_thread`
+runs the blocking call on a worker thread instead, matching Node's actual
+non-blocking behavior rather than a naive line-by-line port of it.
 """
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 
 import resend
@@ -59,7 +69,7 @@ def _email_detail_row(label: str, value: str) -> str:
     )
 
 
-def send_email(*, to: str, subject: str, html: str) -> None:
+def _send_email_blocking(*, to: str, subject: str, html: str) -> None:
     try:
         resend.Emails.send(
             {
@@ -74,28 +84,32 @@ def send_email(*, to: str, subject: str, html: str) -> None:
         raise
 
 
-def send_offer_email(*, to: str, candidate_name: str, job_title: str, review_url: str) -> None:
+async def send_email(*, to: str, subject: str, html: str) -> None:
+    await asyncio.to_thread(_send_email_blocking, to=to, subject=subject, html=html)
+
+
+async def send_offer_email(*, to: str, candidate_name: str, job_title: str, review_url: str) -> None:
     body = f"""
     <p>Hi {candidate_name},</p>
     <p>We're excited to share an offer for the <strong>{job_title}</strong> position.</p>
     {_email_button(label="Review Your Offer", url=review_url)}
     """
-    send_email(to=to, subject=f"Your offer for {job_title}", html=_email_card(title="You have a new offer", body_html=body))
+    await send_email(to=to, subject=f"Your offer for {job_title}", html=_email_card(title="You have a new offer", body_html=body))
 
 
-def send_rejection_email(*, to: str, candidate_name: str, job_title: str, body_html: str) -> None:
-    send_email(
+async def send_rejection_email(*, to: str, candidate_name: str, job_title: str, body_html: str) -> None:
+    await send_email(
         to=to,
         subject=f"Update on your application for {job_title}",
         html=_email_card(title="Application Update", body_html=body_html),
     )
 
 
-def send_assessment_invite_email(*, to: str, subject: str, body_html: str) -> None:
-    send_email(to=to, subject=subject, html=body_html)
+async def send_assessment_invite_email(*, to: str, subject: str, body_html: str) -> None:
+    await send_email(to=to, subject=subject, html=body_html)
 
 
-def send_assessment_completion_email(
+async def send_assessment_completion_email(
     *, to: str, candidate_name: str, auto_submit_reason: str | None = None
 ) -> None:
     if auto_submit_reason:
@@ -110,10 +124,10 @@ def send_assessment_completion_email(
         <p>Thanks for completing your assessment. Our team will review your results soon.</p>
         """
         subject = "Assessment completed"
-    send_email(to=to, subject=subject, html=_email_card(title="Assessment Completed", body_html=body))
+    await send_email(to=to, subject=subject, html=_email_card(title="Assessment Completed", body_html=body))
 
 
-def send_interview_invite_email(
+async def send_interview_invite_email(
     *, to: str, candidate_name: str, job_title: str, scheduled_at: datetime, meeting_url: str | None
 ) -> None:
     date_str, time_str = _format_datetime(scheduled_at)
@@ -124,10 +138,10 @@ def send_interview_invite_email(
     <table>{_email_detail_row("Date", date_str)}{_email_detail_row("Time", time_str)}</table>
     {meeting_html}
     """
-    send_email(to=to, subject=f"Interview scheduled: {job_title}", html=_email_card(title="Interview Scheduled", body_html=body))
+    await send_email(to=to, subject=f"Interview scheduled: {job_title}", html=_email_card(title="Interview Scheduled", body_html=body))
 
 
-def send_interview_slot_email(
+async def send_interview_slot_email(
     *, to: str, candidate_name: str, job_title: str, select_url: str
 ) -> None:
     body = f"""
@@ -135,10 +149,10 @@ def send_interview_slot_email(
     <p>Please pick a time that works for your interview for <strong>{job_title}</strong>.</p>
     {_email_button(label="Choose a Time", url=select_url)}
     """
-    send_email(to=to, subject=f"Pick your interview time: {job_title}", html=_email_card(title="Choose Your Interview Time", body_html=body))
+    await send_email(to=to, subject=f"Pick your interview time: {job_title}", html=_email_card(title="Choose Your Interview Time", body_html=body))
 
 
-def send_interview_confirmation_email(
+async def send_interview_confirmation_email(
     *, to: str, candidate_name: str, job_title: str, scheduled_at: datetime, meeting_url: str | None
 ) -> None:
     date_str, time_str = _format_datetime(scheduled_at)
@@ -149,12 +163,12 @@ def send_interview_confirmation_email(
     <table>{_email_detail_row("Date", date_str)}{_email_detail_row("Time", time_str)}</table>
     {meeting_html}
     """
-    send_email(to=to, subject=f"Interview confirmed: {job_title}", html=_email_card(title="Interview Confirmed", body_html=body))
+    await send_email(to=to, subject=f"Interview confirmed: {job_title}", html=_email_card(title="Interview Confirmed", body_html=body))
 
 
-def send_interview_cancellation_email(*, to: str, candidate_name: str, job_title: str) -> None:
+async def send_interview_cancellation_email(*, to: str, candidate_name: str, job_title: str) -> None:
     body = f"""
     <p>Hi {candidate_name},</p>
     <p>Your interview for <strong>{job_title}</strong> has been cancelled. We'll reach out if we need to reschedule.</p>
     """
-    send_email(to=to, subject=f"Interview cancelled: {job_title}", html=_email_card(title="Interview Cancelled", body_html=body))
+    await send_email(to=to, subject=f"Interview cancelled: {job_title}", html=_email_card(title="Interview Cancelled", body_html=body))

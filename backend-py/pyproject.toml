@@ -16,6 +16,7 @@ dependencies = [
     "arq>=0.26",
     "redis>=5.0",
     "pyjwt[crypto]>=2.9",
+    "bcrypt>=4.2",
     "boto3>=1.35",
     "resend>=2.4",
     "google-genai>=0.3",

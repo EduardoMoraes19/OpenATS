@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
-
-from app.shared.schema import ApiModel
+from app.shared.schema import ApiModel, UtcDatetime
 
 
 class ChatMessageOut(ApiModel):
@@ -10,7 +8,7 @@ class ChatMessageOut(ApiModel):
     sender_id: int
     message: str | None
     reply_to_id: int | None
-    sent_at: datetime
+    sent_at: UtcDatetime
     is_system_message: bool
     is_deleted: bool
     # Nullable: an outer join to users, so a message from a since-deleted

@@ -37,8 +37,8 @@ async def _create_assessment_with_mc_question(client, headers) -> dict:
     return response.json()["data"]
 
 
-async def test_invite_reuses_active_attempt_instead_of_duplicating(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_invite_reuses_active_attempt_instead_of_duplicating(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     assessment = await _create_assessment_with_mc_question(client, headers)
@@ -61,8 +61,8 @@ async def test_invite_reuses_active_attempt_instead_of_duplicating(client, rsa_k
     assert second_invite.json()["data"]["attemptId"] == first_invite.json()["data"]["attemptId"]
 
 
-async def test_public_attempt_flow_start_answer_complete_grades_correctly(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_public_attempt_flow_start_answer_complete_grades_correctly(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     assessment = await _create_assessment_with_mc_question(client, headers)
@@ -99,8 +99,8 @@ async def test_public_attempt_flow_start_answer_complete_grades_correctly(client
     assert completed["data"]["passed"] is None, "no pass/fail threshold is implemented - must stay null"
 
 
-async def test_wrong_answer_scores_zero(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_wrong_answer_scores_zero(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     assessment = await _create_assessment_with_mc_question(client, headers)

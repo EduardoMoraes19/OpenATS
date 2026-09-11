@@ -13,8 +13,8 @@ from httpx import AsyncClient
 from tests.conftest import make_bearer_token
 
 
-async def manager_headers(rsa_keypair, *, sub: str = "manager-1", email: str = "manager@example.com") -> dict:
-    token = make_bearer_token(rsa_keypair, sub=sub, email=email, role="super_admin")
+async def manager_headers(*, email: str = "manager@example.com") -> dict:
+    token = await make_bearer_token(email=email, role="super_admin")
     return {"Authorization": f"Bearer {token}"}
 
 

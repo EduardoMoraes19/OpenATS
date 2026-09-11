@@ -27,7 +27,7 @@ from app.modules.offer.service import OfferRelations
 from app.modules.pipeline.schemas import PipelineStageOut
 from app.modules.template.schemas import TemplateOut
 from app.shared.auth.deps import get_current_user, require_manager
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 from app.sockets.server import notify_offer_changed, notify_stage_changed
 
 router = APIRouter()

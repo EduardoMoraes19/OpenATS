@@ -46,6 +46,15 @@ register_error_handlers(fastapi_app)
 fastapi_app.include_router(api_router, prefix="/api")
 fastapi_app.include_router(public_router, prefix="/public")
 
+# Mounted as a sibling of api_router (not included inside it) so /login is
+# reachable without a token: api_router applies get_current_user to every
+# route in its group (see app/routes/api_router.py), and /logout /
+# /change-password declare that dependency per-route instead - see
+# app/modules/auth/router.py's module docstring for the full rationale.
+from app.modules.auth.router import router as auth_router  # noqa: E402
+
+fastapi_app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+
 # /oauth/google/callback is mounted outside /api on purpose - Google redirects
 # the browser here without any app auth header, so it must not require auth.
 from app.modules.integrations.oauth_router import oauth_router  # noqa: E402

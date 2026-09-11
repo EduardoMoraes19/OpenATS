@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Literal
 
 from pydantic import EmailStr, Field
 
 from app.db.models.enums import CandidateStatus
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class CustomAnswerIn(ApiModel):
@@ -52,8 +51,8 @@ class CandidateOut(ApiOutModel):
     job_id: int
     current_stage_id: int | None
     status: CandidateStatus
-    applied_at: datetime
-    updated_at: datetime
+    applied_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 

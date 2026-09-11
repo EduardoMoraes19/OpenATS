@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { asgardeo } from "@asgardeo/nextjs/server";
+import { getSessionToken } from "@/lib/session";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 async function getAccessToken() {
-  const client = await asgardeo();
-  const sessionId = await client.getSessionId();
-  if (!sessionId) throw new Error("Unauthorized");
-  return client.getAccessToken(sessionId);
+  const token = await getSessionToken();
+  if (!token) throw new Error("Unauthorized");
+  return token;
 }
 
 export async function POST(req: Request) {

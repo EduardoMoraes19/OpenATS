@@ -3,9 +3,10 @@
 import { createContext, useContext } from "react";
 
 /**
- * Carries the Asgardeo access token from the dashboard layout (a server
- * component, where the token lives) down to the client hooks that open
- * socket connections. The backend rejects sockets without it.
+ * Carries the session token from the dashboard layout (a server component,
+ * where the httpOnly session cookie lives - see lib/session.ts) down to the
+ * client hooks that open socket connections. The backend rejects sockets
+ * without it.
  */
 const SocketTokenContext = createContext<string | undefined>(undefined);
 

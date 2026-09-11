@@ -1,26 +1,24 @@
 """Shared test fixtures.
 
-`bearer_token` mints a real RS256 JWT and monkeypatches
-`verify_token._jwks_client.get_signing_key_from_jwt` to hand back the
-matching public key directly, instead of fetching a real JWKS over HTTP -
-the same technique backend/tests/helpers/jwt.ts uses (mocking the JWKS
-fetch), adapted to PyJWT's `PyJWKClient`.
+`make_bearer_token` creates a real `User` row in the test database (self-
+hosted auth has no JIT provisioning any more - `get_user_from_token` does a
+plain lookup by numeric id, so a token is only valid if a matching row
+already exists) and returns a bearer token for it, signed the same way
+`app.shared.auth.jwt_auth.create_access_token` signs a real login token
+(HS256, `settings.secret_key`).
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-import jwt
-import pytest
 import pytest_asyncio
-from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 
-from app.db.base import engine
+from app.db.base import async_session_factory, engine
+from app.db.models.enums import AppRole
+from app.db.models.users import User
 from app.settings import settings
-from app.shared.auth import verify_token
+from app.shared.auth.jwt_auth import create_access_token, hash_password
 from app.shared.rate_limit import redis_client
 
 if "_test" not in settings.database_url and ":5433" not in settings.database_url:
@@ -48,40 +46,36 @@ _APP_TABLES = (
 )
 
 
-@dataclass
-class _SigningKey:
-    key: object
-
-
-@pytest.fixture(scope="session")
-def rsa_keypair():
-    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    return private_key, private_key.public_key()
-
-
-@pytest.fixture(autouse=True)
-def _patch_jwks(rsa_keypair, monkeypatch):
-    _, public_key = rsa_keypair
-    monkeypatch.setattr(
-        verify_token._jwks_client,
-        "get_signing_key_from_jwt",
-        lambda token: _SigningKey(key=public_key),
-    )
-
-
-def make_bearer_token(
-    rsa_keypair, *, sub: str, email: str, role: str = "super_admin", first_name: str = "Test", last_name: str = "User"
+async def make_bearer_token(
+    *,
+    email: str,
+    role: str = "super_admin",
+    password: str = "TestPassword123!",
+    first_name: str = "Test",
+    last_name: str = "User",
 ) -> str:
-    private_key, _ = rsa_keypair
-    payload = {
-        "sub": sub,
-        "email": email,
-        "given_name": first_name,
-        "family_name": last_name,
-        "roles": [role],
-        "iss": settings.asgardeo_issuer,
-    }
-    return jwt.encode(payload, private_key, algorithm="RS256")
+    """Creates a real, active `User` row with a bcrypt-hashed password and
+    `token_version=0`, then mints a valid access token for it - the local-
+    auth replacement for the old RS256/JWKS-mocked `make_bearer_token`.
+    Every caller needs a unique `email` per user it wants to exist (tests
+    already pick distinct emails for isolation; `_clean_database` truncates
+    `users` between tests, so the same email is safe to reuse across
+    different test functions)."""
+    async with async_session_factory() as session:
+        user = User(
+            email=email,
+            password_hash=hash_password(password),
+            role=AppRole(role),
+            token_version=0,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        user_id = user.id
+
+    return create_access_token(user_id=user_id, role=role, token_version=0)
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)

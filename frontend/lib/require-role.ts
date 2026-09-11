@@ -1,4 +1,4 @@
-import { asgardeo } from "@asgardeo/nextjs/server";
+import { getSessionToken } from "./session";
 
 type AppRole = "super_admin" | "hiring_manager" | "interviewer";
 
@@ -8,51 +8,18 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
   return JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
 }
 
-function collectRoles(payload: Record<string, unknown>): string[] {
-  const out: string[] = [];
-
-  const roles = payload["roles"];
-  if (Array.isArray(roles)) {
-    for (const x of roles) if (typeof x === "string" && x.trim()) out.push(x.trim());
-  } else if (typeof roles === "string" && roles.trim()) {
-    out.push(roles.trim());
-  }
-
-  const wso2 = payload["http://wso2.org/claims/role"];
-  if (Array.isArray(wso2)) {
-    for (const x of wso2) if (typeof x === "string" && x.trim()) out.push(x.trim());
-  } else if (typeof wso2 === "string" && wso2.trim()) {
-    for (const part of wso2.split(",")) {
-      const s = part.trim();
-      if (s) out.push(s);
-    }
-  }
-
-  return out;
-}
-
-function mapToAppRole(names: string[]): AppRole | null {
-  const n = names.map((s) => s.trim().toLowerCase().replace(/_/g, " ").replace(/\s+/g, " "));
-  const has = (f: (x: string) => boolean) => n.some(f);
-
-  if (has((x) => x === "super admin" || x.endsWith("/super admin") || x.includes("super admin")))
-    return "super_admin";
-  if (has((x) => x === "hiring manager" || x.endsWith("/hiring manager")))
-    return "hiring_manager";
-  if (has((x) => x === "interviewer" || x.endsWith("/interviewer")))
-    return "interviewer";
-
-  return null;
-}
-
+/**
+ * This is a UX-layer gate only (avoids rendering privileged UI before the
+ * first backend round-trip) - the real enforcement is the backend
+ * re-checking the token's role claim (and its `tv` claim against the
+ * user's current token_version) on every request. Not verifying the
+ * signature here is deliberate for that reason: a forged token would just
+ * get past this check and then be rejected by the backend anyway.
+ */
 export async function requireRole(required: AppRole): Promise<void> {
-  const client = await asgardeo();
-  const sessionId = await client.getSessionId();
-  if (!sessionId) throw new Error("Unauthorized");
+  const token = await getSessionToken();
+  if (!token) throw new Error("Unauthorized");
 
-  const token = await client.getAccessToken(sessionId);
   const payload = decodeJwtPayload(token);
-  const role = mapToAppRole(collectRoles(payload));
-
-  if (role !== required) throw new Error("Forbidden");
+  if (payload["role"] !== required) throw new Error("Forbidden");
 }

@@ -10,13 +10,12 @@ the API boundary (zod validates structurally, not by strict discriminant).
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from pydantic import Field
 
 from app.db.models.enums import TemplateType
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class CreateTemplateIn(ApiModel):
@@ -40,5 +39,5 @@ class TemplateOut(ApiOutModel):
     subject: str
     body_json: Any
     created_by: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime

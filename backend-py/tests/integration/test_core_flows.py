@@ -1,6 +1,7 @@
 """Real end-to-end integration tests against the live postgres-test database
-(port 5433) - exercises auth (JWT verify + JIT provisioning), the DB layer,
-and representative business logic through actual HTTP requests.
+(port 5433) - exercises auth (JWT verification against a real `User` row),
+the DB layer, and representative business logic through actual HTTP
+requests.
 """
 
 from __future__ import annotations
@@ -25,8 +26,8 @@ async def test_unauthenticated_request_is_rejected(client):
     assert response.status_code == 401
 
 
-async def test_jit_provisioning_and_me_endpoint(client, rsa_keypair):
-    token = make_bearer_token(rsa_keypair, sub="user-1", email="admin@example.com", role="super_admin")
+async def test_me_endpoint_returns_the_authenticated_user(client):
+    token = await make_bearer_token(email="admin@example.com", role="super_admin")
     response = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     body = response.json()["data"]
@@ -34,23 +35,8 @@ async def test_jit_provisioning_and_me_endpoint(client, rsa_keypair):
     assert body["role"] == "super_admin"
 
 
-async def test_reprovisioning_reconciles_by_email_not_duplicate(client, rsa_keypair):
-    """Same email, different `sub` (asgardeo_user_id) - the second call must
-    reconcile onto the same user row, not violate the email unique constraint
-    or create a duplicate - port of verify-token.ts's JIT provisioning order."""
-    token_a = make_bearer_token(rsa_keypair, sub="sub-a", email="reconcile@example.com")
-    token_b = make_bearer_token(rsa_keypair, sub="sub-b", email="reconcile@example.com")
-
-    response_a = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token_a}"})
-    response_b = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token_b}"})
-
-    assert response_a.status_code == 200
-    assert response_b.status_code == 200
-    assert response_a.json()["data"]["id"] == response_b.json()["data"]["id"]
-
-
-async def test_create_company_then_department_then_job_full_flow(client, rsa_keypair):
-    admin_token = make_bearer_token(rsa_keypair, sub="flow-admin", email="flow-admin@example.com", role="super_admin")
+async def test_create_company_then_department_then_job_full_flow(client):
+    admin_token = await make_bearer_token(email="flow-admin@example.com", role="super_admin")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     company_response = await client.put(
@@ -95,14 +81,14 @@ async def test_create_company_then_department_then_job_full_flow(client, rsa_key
     assert any(j["slug"] == slug for j in public_response.json()["data"])
 
 
-async def test_responses_are_camel_case_matching_the_frontend(client, rsa_keypair):
+async def test_responses_are_camel_case_matching_the_frontend(client):
     """The TS backend's Drizzle models map snake_case DB columns to camelCase
     TS properties (e.g. `firstName: varchar("first_name")`), and the
     frontend's TS types are written against that camelCase shape. Every
     Pydantic schema here must alias to camelCase on the way out (see
     app/shared/schema.py) or the frontend would silently receive undefined
     for every multi-word field."""
-    admin_token = make_bearer_token(rsa_keypair, sub="camel-admin", email="camel-admin@example.com", role="super_admin")
+    admin_token = await make_bearer_token(email="camel-admin@example.com", role="super_admin")
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     company_response = await client.put(
@@ -133,10 +119,30 @@ async def test_responses_are_camel_case_matching_the_frontend(client, rsa_keypai
     assert camel_department_response.status_code == 201
 
 
-async def test_manager_role_required_for_write_routes(client, rsa_keypair):
-    interviewer_token = make_bearer_token(
-        rsa_keypair, sub="interviewer-1", email="interviewer@example.com", role="interviewer"
+async def test_timestamps_are_z_suffixed_matching_the_frontend(client):
+    """Every `timestamp` column here is WITHOUT TIME ZONE (see
+    app/shared/schema.py's UtcDatetime), but the TS backend's
+    `Date.toISOString()` always emits a `Z`-suffixed UTC string. A bare,
+    offset-less timestamp is ambiguous to a JS `Date` parser and can shift
+    displayed times by the viewer's local UTC offset."""
+    admin_token = await make_bearer_token(email="tz-admin@example.com", role="super_admin")
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    company_response = await client.put(
+        "/api/company", json={"name": "TZ Co", "email": "tz@example.com"}, headers=headers
     )
+    assert company_response.status_code == 200
+
+    department_response = await client.post(
+        "/api/company/departments", json={"name": "TZ Dept"}, headers=headers
+    )
+    assert department_response.status_code == 201
+    body = department_response.json()["data"]
+    assert body["createdAt"].endswith("Z"), f"expected a Z-suffixed timestamp, got: {body['createdAt']!r}"
+
+
+async def test_manager_role_required_for_write_routes(client):
+    interviewer_token = await make_bearer_token(email="interviewer@example.com", role="interviewer")
     response = await client.post(
         "/api/company/departments",
         json={"name": "Should Be Forbidden"},

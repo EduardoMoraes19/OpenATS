@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, EmailStr, Field, model_validator
 
 from app.db.models.enums import InterviewOutcome, MeetingProvider
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 from app.shared.time import to_naive_utc
 
 
@@ -16,7 +16,7 @@ class CreateInterviewIn(ApiModel):
     fields update/schedule carry - `interviewerId` is required here."""
 
     stage_id: int | None = None
-    scheduled_at: datetime | None = None
+    scheduled_at: UtcDatetime | None = None
     duration_minutes: int | None = Field(default=None, gt=0)
     notes: str | None = None
     attendee_emails: list[EmailStr] | None = None
@@ -26,7 +26,7 @@ class CreateInterviewIn(ApiModel):
 class UpdateInterviewIn(ApiModel):
     """`PATCH /interviews/:id` - interviews.routes.ts's `updateInterviewSchema`."""
 
-    scheduled_at: datetime | None = None
+    scheduled_at: UtcDatetime | None = None
     duration_minutes: int | None = Field(default=None, gt=0)
     notes: str | None = None
     outcome: InterviewOutcome | None = None
@@ -41,14 +41,14 @@ class UpdateInterviewIn(ApiModel):
     attendee_emails: list[EmailStr] | None = None
 
 
-def _must_be_future(value: datetime) -> datetime:
+def _must_be_future(value: UtcDatetime) -> UtcDatetime:
     if to_naive_utc(value) <= datetime.now(UTC).replace(tzinfo=None):
         raise ValueError("Each time slot must be a valid date in the future")
     return value
 
 
 class TimeSlotIn(ApiModel):
-    datetime: Annotated[datetime, AfterValidator(_must_be_future)]
+    datetime: Annotated[UtcDatetime, AfterValidator(_must_be_future)]
     selected: bool = False
 
 
@@ -93,12 +93,12 @@ class InterviewOut(ApiOutModel):
     status: str
     outcome: InterviewOutcome | None
     public_token: str | None
-    scheduled_at: datetime | None
+    scheduled_at: UtcDatetime | None
     duration_minutes: int | None
     notes: str | None
     created_by: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 class PublicInterviewOut(ApiModel):
@@ -118,7 +118,7 @@ class AllocatedSlotOut(ApiModel):
     array of `{datetime, interviewerId}`, not bare datetimes, so the
     frontend can restrict the "already taken" check to the same interviewer."""
 
-    datetime: datetime
+    datetime: UtcDatetime
     interviewer_id: int | None
 
 
@@ -140,5 +140,5 @@ class FeedbackOut(ApiOutModel):
     author_id: int
     content: str
     rating: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime

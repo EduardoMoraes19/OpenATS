@@ -18,7 +18,7 @@ from app.modules.rejection.schemas import RejectCandidateIn, RejectionOut
 from app.modules.template.template_engine_service import compile_template
 from app.modules.template.variable_service import get_context_for_candidate
 from app.shared.auth.deps import get_current_user, require_manager
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 
 router = APIRouter()
 

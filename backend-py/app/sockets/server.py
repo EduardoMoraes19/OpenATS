@@ -21,7 +21,7 @@ from app.db.models.users import User
 from app.logging import get_logger
 from app.settings import settings
 from app.shared.auth.job_access import can_access_candidate, can_access_job, parse_room_id
-from app.shared.auth.verify_token import AuthError, verify_access_token
+from app.shared.auth.jwt_auth import AuthError, get_user_from_token
 
 logger = get_logger(__name__)
 
@@ -54,7 +54,7 @@ async def connect(sid: str, environ: dict, auth: dict | None) -> None:
 
     async with session_scope() as db:
         try:
-            user = await verify_access_token(token, db)
+            user = await get_user_from_token(token, db)
         except (AuthError, jwt.PyJWTError) as exc:
             logger.warning("socket handshake rejected: %s", exc)
             raise ConnectionRefusedError("unauthorized") from exc

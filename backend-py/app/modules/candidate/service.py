@@ -101,7 +101,7 @@ async def apply_for_job(
     try:
         job = await db.get(Job, job_id)
         assert job is not None, "guaranteed by the FK-constrained candidate insert above"
-        mail_service.send_email(
+        await mail_service.send_email(
             to=email,
             subject=f"Application received: {job.title}",
             html=f"<p>Hi {first_name},</p><p>We've received your application for {job.title}. "

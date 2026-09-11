@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.candidates import Candidate
 from app.db.models.pipeline import JobHiringTeam
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 
 
 def parse_room_id(value: object) -> int | None:

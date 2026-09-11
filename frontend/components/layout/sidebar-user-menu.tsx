@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { useAsgardeo } from "@asgardeo/nextjs";
+import { useCurrentUser } from "@/hooks/queries/use-user";
+import { logoutAction } from "@/app/login/actions";
 
 function initialsFromName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -41,40 +42,17 @@ function initialsFromName(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function decodeJWT(token: string) {
-  try {
-    const payload = token.split(".")[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
-
-type Claims = {
-  given_name?: string;
-  family_name?: string;
-  email?: string;
-  username?: string;
-  sub?: string;
-  profile?: string;
-  org_name?: string;
-  roles?: string[];
-};
-
 export type SidebarUserMenuProps = {
   variant?: "header" | "sidebar";
-  accessToken?: string;
 };
 
-export function SidebarUserMenu({
-  variant = "header",
-  accessToken,
-}: SidebarUserMenuProps) {
-  const { signOut, isLoading } = useAsgardeo();
+export function SidebarUserMenu({ variant = "header" }: SidebarUserMenuProps) {
+  const { data: currentUserRes, isLoading } = useCurrentUser();
   const { theme, setTheme } = useTheme();
   const { state } = useSidebar();
   const queryClient = useQueryClient();
   const [confirmLogoutOpen, setConfirmLogoutOpen] = React.useState(false);
+  const [signingOut, setSigningOut] = React.useState(false);
 
   // Theme is client-only, so hold the toggle back until after hydration.
   const mounted = React.useSyncExternalStore(
@@ -86,14 +64,12 @@ export function SidebarUserMenu({
   const collapsed = state === "collapsed";
   const showProfileRow = variant === "sidebar" && !collapsed;
 
-  const claims: Claims | null = accessToken ? decodeJWT(accessToken) : null;
-
-  const displayName = claims?.given_name
-    ? `${claims.given_name} ${claims.family_name ?? ""}`.trim()
-    : (claims?.username ?? claims?.sub ?? "User");
-
-  const email = claims?.email ?? claims?.username ?? claims?.sub ?? "";
-  const avatarSrc = claims?.profile ?? undefined;
+  const user = currentUserRes?.data;
+  const displayName = user
+    ? `${user.firstName} ${user.lastName ?? ""}`.trim()
+    : "User";
+  const email = user?.email ?? "";
+  const avatarSrc = user?.avatarUrl ?? undefined;
 
   return (
     <DropdownMenu>
@@ -244,9 +220,11 @@ export function SidebarUserMenu({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              disabled={signingOut}
               onClick={() => {
+                setSigningOut(true);
                 queryClient.clear();
-                void signOut();
+                void logoutAction();
               }}
             >
               Log out

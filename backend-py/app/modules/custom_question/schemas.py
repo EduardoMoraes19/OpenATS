@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import Field, model_validator
 
 from app.db.models.enums import QuestionType
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 _OPTION_BASED_TYPES = {QuestionType.checkbox, QuestionType.radio}
 
@@ -53,8 +51,8 @@ class CustomQuestionOut(ApiOutModel):
     question_type: QuestionType
     is_required: bool
     position: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
     options: list[QuestionOptionOut] = Field(default_factory=list)
 
 
@@ -69,5 +67,5 @@ class AssessmentAttachmentOut(ApiOutModel):
     job_id: int
     assessment_id: int
     trigger_stage_id: int
-    created_at: datetime
+    created_at: UtcDatetime
 

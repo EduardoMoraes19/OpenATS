@@ -124,6 +124,17 @@ class MeetingProvider(str, enum.Enum):
     google_meet = "google_meet"
 
 
+class AppRole(str, enum.Enum):
+    """Not part of the original Drizzle schema - the original app never
+    persisted a role, deriving it from the Asgardeo JWT on every request.
+    Local auth (see app/shared/auth/jwt_auth.py) has no external IdP to
+    derive it from, so it's now a real column on `users`."""
+
+    super_admin = "super_admin"
+    hiring_manager = "hiring_manager"
+    interviewer = "interviewer"
+
+
 def pg_enum(python_enum: type[enum.Enum], name: str) -> PgEnum:
     """Build a native Postgres ENUM column type bound to `python_enum`, using the
     exact Postgres type name from the TS schema (values_callable keeps the enum

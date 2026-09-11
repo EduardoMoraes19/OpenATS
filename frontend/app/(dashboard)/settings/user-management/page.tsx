@@ -14,15 +14,15 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
-import type { User as AsgardeoUser } from "@/types";
+import type { User as ManagedUser } from "@/types";
 import {
+  createUser,
   deleteUser,
   fetchUsers,
-  inviteUser,
   updateUser,
 } from "@/lib/users-api";
 import type {
-  CreateUserPayload as InviteUserPayload,
+  CreateUserPayload,
   UpdateUserPayload,
 } from "@/lib/users-api";
 
@@ -55,7 +55,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Sheet,
   SheetClose,
@@ -85,9 +84,8 @@ const ROLES = [
 ] as const;
 
 type Role = (typeof ROLES)[number]["value"];
-type PasswordMethod = "invite" | "set";
 
-function getDisplayName(u: AsgardeoUser) {
+function getDisplayName(u: ManagedUser) {
   return [u.firstName, u.lastName].filter(Boolean).join(" ") || u.email;
 }
 
@@ -109,10 +107,11 @@ function generatePassword(length = 12) {
 
 function passwordChecks(pw: string) {
   return {
-    length: pw.length >= 8 && pw.length <= 64,
+    length: pw.length >= 12,
     upper: /[A-Z]/.test(pw),
     lower: /[a-z]/.test(pw),
     number: /\d/.test(pw),
+    special: /[!@#$%^&*(),.?":{}|<>\-_=+[\]\\;'/`~]/.test(pw),
   };
 }
 
@@ -162,7 +161,7 @@ export default function UserManagementPage() {
     isLoading: loading,
     refetch: reloadUsers,
   } = useQuery({
-    queryKey: ["asgardeo-users"],
+    queryKey: ["managed-users"],
     queryFn: async () => {
       try {
         return await fetchUsers();
@@ -174,17 +173,15 @@ export default function UserManagementPage() {
   });
   const [query, setQuery] = useState("");
 
-  const [editUser, setEditUser] = useState<AsgardeoUser | null>(null);
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editForm, setEditForm] = useState<UpdateUserPayload>({});
   const [saving, setSaving] = useState(false);
 
-  const [deleteTarget, setDeleteTarget] = useState<AsgardeoUser | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ManagedUser | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [passwordMethod, setPasswordMethod] =
-    useState<PasswordMethod>("invite");
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -199,12 +196,11 @@ export default function UserManagementPage() {
     });
   }, [query, users]);
 
-  const openEdit = (u: AsgardeoUser) => {
+  const openEdit = (u: ManagedUser) => {
     setEditUser(u);
     setEditForm({
       firstName: u.firstName ?? "",
       lastName: u.lastName ?? "",
-      email: u.email ?? "",
       role: u.role ?? "interviewer",
     });
   };
@@ -213,7 +209,7 @@ export default function UserManagementPage() {
     if (!editUser) return;
     setSaving(true);
     try {
-      await updateUser(editUser.id, { ...editForm, oldRole: editUser.role });
+      await updateUser(editUser.id, editForm);
       toast.success("User updated");
       setEditUser(null);
       await reloadUsers();
@@ -240,7 +236,6 @@ export default function UserManagementPage() {
   };
 
   const openCreate = () => {
-    setPasswordMethod("invite");
     setShowPassword(false);
     setCreateForm(emptyCreate);
     setCreateOpen(true);
@@ -256,38 +251,35 @@ export default function UserManagementPage() {
       toast.error("Email and first name are required.");
       return;
     }
-    if (passwordMethod === "set") {
-      if (!password) {
-        toast.error("Password is required.");
-        return;
-      }
-      const c = passwordChecks(password);
-      if (!c.length) {
-        toast.error("Password must be between 8 and 64 characters.");
-        return;
-      }
-      if (!c.upper || !c.lower || !c.number) {
-        toast.error("Password must include uppercase, lowercase and a number.");
-        return;
-      }
+    // Mirrors the backend's complexity rule (min 12 chars, upper, lower,
+    // digit, special char) - see app/modules/auth/schemas.py's
+    // validate_password_strength. Client-side check is just for a fast
+    // error message; the backend re-validates regardless.
+    if (password.length < 12) {
+      toast.error("Password must be at least 12 characters.");
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/\d/.test(password)) {
+      toast.error("Password must include uppercase, lowercase and a number.");
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>\-_=+[\]\\;'/`~]/.test(password)) {
+      toast.error("Password must include a special character.");
+      return;
     }
 
-    const payload: InviteUserPayload = {
+    const payload: CreateUserPayload = {
       email,
-      userName: email,
       firstName,
       lastName,
       role: createForm.role,
-      askPassword: passwordMethod === "invite",
-      ...(passwordMethod === "set" ? { password } : {}),
+      password,
     };
 
     setCreating(true);
     try {
-      await inviteUser(payload);
-      toast.success(
-        passwordMethod === "invite" ? "Invitation sent" : "User created",
-      );
+      await createUser(payload);
+      toast.success("User created");
       setCreateOpen(false);
       await reloadUsers();
     } catch (e) {
@@ -518,132 +510,101 @@ export default function UserManagementPage() {
                 </Select>
               </div>
 
-              <div className="col-span-2 pt-0.5">
-                <p className="text-xs font-medium text-slate-500 dark:text-neutral-400 mb-3">
-                  Select the method to set the user password
-                </p>
-                <RadioGroup
-                  value={passwordMethod}
-                  onValueChange={(v) => setPasswordMethod(v as PasswordMethod)}
-                  className="gap-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="pw-method-invite" value="invite" />
-                    <Label
-                      htmlFor="pw-method-invite"
-                      className="text-sm font-medium text-slate-800 dark:text-neutral-200 cursor-pointer"
+              <div className="col-span-2">
+                <Label className="text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5 block">
+                  Password *
+                </Label>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="relative flex-1 w-full">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={createForm.password}
+                      onChange={(e) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          password: e.target.value,
+                        }))
+                      }
+                      placeholder="Enter the password"
+                      className={inputCls + " pr-10"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-neutral-300"
                     >
-                      Invite the user to set their own password
-                    </Label>
+                      {showPassword ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <RadioGroupItem id="pw-method-set" value="set" />
-                    <Label
-                      htmlFor="pw-method-set"
-                      className="text-sm font-medium text-slate-800 dark:text-neutral-200 cursor-pointer"
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 px-4 rounded-lg bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 shadow-none flex-1 sm:flex-none"
+                      onClick={() =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          password: generatePassword(16),
+                        }))
+                      }
                     >
-                      Set a password for the user
-                    </Label>
+                      Generate
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={!createForm.password}
+                      className="h-10 px-3 rounded-lg bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 shadow-none flex-1 sm:flex-none"
+                      onClick={() => copyToClipboard(createForm.password)}
+                    >
+                      <Copy className="size-4 mr-2" />
+                      Copy
+                    </Button>
                   </div>
-                </RadioGroup>
-              </div>
-
-              {passwordMethod === "set" && (
-                <div className="col-span-2">
-                  <Label className="text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5 block">
-                    Password *
-                  </Label>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <div className="relative flex-1 w-full">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        value={createForm.password}
-                        onChange={(e) =>
-                          setCreateForm((f) => ({
-                            ...f,
-                            password: e.target.value,
-                          }))
-                        }
-                        placeholder="Enter the password"
-                        className={inputCls + " pr-10"}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-neutral-300"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="size-4" />
-                        ) : (
-                          <Eye className="size-4" />
-                        )}
-                      </button>
-                    </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 px-4 rounded-lg bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 shadow-none flex-1 sm:flex-none"
-                        onClick={() =>
-                          setCreateForm((f) => ({
-                            ...f,
-                            password: generatePassword(12),
-                          }))
-                        }
-                      >
-                        Generate
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={!createForm.password}
-                        className="h-10 px-3 rounded-lg bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-neutral-300 shadow-none flex-1 sm:flex-none"
-                        onClick={() => copyToClipboard(createForm.password)}
-                      >
-                        <Copy className="size-4 mr-2" />
-                        Copy
-                      </Button>
-                    </div>
-                  </div>
-                  {(() => {
-                    const c = passwordChecks(createForm.password);
-                    const item = (ok: boolean, label: string) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-2 text-xs mt-2"
-                      >
-                        <span
-                          className={
-                            "inline-block size-2 rounded-full " +
-                            (ok
-                              ? "bg-theme"
-                              : "bg-slate-200 dark:bg-neutral-800")
-                          }
-                        />
-                        <span
-                          className={
-                            ok
-                              ? "text-slate-700 dark:text-neutral-300"
-                              : "text-slate-500 dark:text-neutral-500"
-                          }
-                        >
-                          {label}
-                        </span>
-                      </div>
-                    );
-                    return (
-                      <div className="mt-2">
-                        {item(c.length, "Must be between 8 and 64 characters")}
-                        {item(
-                          c.upper,
-                          "At least 1 uppercase and 1 lowercase letter",
-                        )}
-                        {item(c.number, "At least 1 number")}
-                      </div>
-                    );
-                  })()}
                 </div>
-              )}
+                {(() => {
+                  const c = passwordChecks(createForm.password);
+                  const item = (ok: boolean, label: string) => (
+                    <div
+                      key={label}
+                      className="flex items-center gap-2 text-xs mt-2"
+                    >
+                      <span
+                        className={
+                          "inline-block size-2 rounded-full " +
+                          (ok
+                            ? "bg-theme"
+                            : "bg-slate-200 dark:bg-neutral-800")
+                        }
+                      />
+                      <span
+                        className={
+                          ok
+                            ? "text-slate-700 dark:text-neutral-300"
+                            : "text-slate-500 dark:text-neutral-500"
+                        }
+                      >
+                        {label}
+                      </span>
+                    </div>
+                  );
+                  return (
+                    <div className="mt-2">
+                      {item(c.length, "At least 12 characters")}
+                      {item(
+                        c.upper && c.lower,
+                        "At least 1 uppercase and 1 lowercase letter",
+                      )}
+                      {item(c.number, "At least 1 number")}
+                      {item(c.special, "At least 1 special character")}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
 
@@ -704,19 +665,6 @@ export default function UserManagementPage() {
                 value={editForm.lastName ?? ""}
                 onChange={(e) =>
                   setEditForm((f) => ({ ...f, lastName: e.target.value }))
-                }
-                className={inputCls}
-              />
-            </div>
-            <div className="col-span-2">
-              <Label className="text-xs font-medium text-slate-500 dark:text-neutral-400 mb-1.5 block">
-                Email
-              </Label>
-              <Input
-                type="email"
-                value={editForm.email ?? ""}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, email: e.target.value }))
                 }
                 className={inputCls}
               />

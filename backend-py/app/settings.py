@@ -25,9 +25,10 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379", alias="REDIS_URL")
     port: int = Field(default=8080, alias="PORT", gt=0)
 
-    # Auth (Asgardeo / WSO2)
-    asgardeo_jwks_url: str = Field(alias="ASGARDEO_JWKS_URL")
-    asgardeo_issuer: str = Field(alias="ASGARDEO_ISSUER")
+    # Auth (self-hosted JWT, modeled on labs-contaja's admin auth)
+    secret_key: str = Field(alias="SECRET_KEY")
+    jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
+    access_token_expire_minutes: int = Field(default=30, alias="ACCESS_TOKEN_EXPIRE_MINUTES", gt=0)
 
     # Encryption (integration credentials + OAuth state tokens)
     encryption_key: str = Field(alias="ENCRYPTION_KEY")

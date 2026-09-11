@@ -79,3 +79,19 @@ public_read_limiter = rate_limiter(
     window_seconds=15 * 60,
     message="Too many requests. Please try again later.",
 )
+# Login has no authenticated user yet, so this always keys by IP (the
+# fallback branch in _rate_limit_key) - a tight window/limit to blunt
+# credential-stuffing/brute-force, matching labs-contaja's `5/minute` on
+# admin_login.
+auth_login_limiter = rate_limiter(
+    name="auth_login",
+    limit=5,
+    window_seconds=60,
+    message="Too many login attempts. Please try again later.",
+)
+auth_change_password_limiter = rate_limiter(
+    name="auth_change_password",
+    limit=3,
+    window_seconds=60,
+    message="Too many password change attempts. Please try again later.",
+)

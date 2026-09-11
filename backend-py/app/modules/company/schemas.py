@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import EmailStr, Field, HttpUrl
 
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class CompanyOut(ApiOutModel):
@@ -16,8 +14,8 @@ class CompanyOut(ApiOutModel):
     address: str | None
     description: str | None
     logo_url: str | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 
@@ -35,8 +33,8 @@ class DepartmentOut(ApiOutModel):
     id: int
     company_id: int
     name: str
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 

@@ -24,7 +24,7 @@ from app.modules.job.schemas import (
 )
 from app.modules.pipeline.router import router as pipeline_router
 from app.shared.auth.deps import get_current_user, require_manager
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 
 router = APIRouter()
 

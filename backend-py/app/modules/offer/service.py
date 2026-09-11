@@ -20,15 +20,12 @@ from app.db.models.jobs import Job
 from app.db.models.offers import Offer
 from app.db.models.pipeline import JobPipelineStage
 from app.db.models.templates import Template
-from app.logging import get_logger
 from app.modules.candidate import activity_service
 from app.modules.offer import repository
 from app.modules.template.template_engine_service import compile_template
 from app.modules.template.variable_service import get_context_for_offer
 from app.settings import settings
 from app.shared.services import mail_service
-
-logger = get_logger(__name__)
 
 # draft -> {sent, expired}, sent -> {viewed, accepted, declined, expired},
 # viewed -> {accepted, declined, expired}; accepted/declined/expired terminal.
@@ -265,6 +262,24 @@ async def send_offer(db: AsyncSession, offer_id: int, *, actor_id: int) -> Offer
 
     review_url = f"{settings.frontend_url}/offers/{offer.review_token}"
 
+    # offer.service.ts's send() persists the "sent" status before emailing,
+    # then awaits the email with no try/catch: a mail failure surfaces to
+    # the client as a 400 with the raw provider error even though the offer
+    # was already committed as sent, and the offer_sent activity log (below)
+    # is never written. Preserved verbatim, not "fixed" - see CLAUDE.md.
+    await db.commit()
+    await db.refresh(offer)
+
+    try:
+        await mail_service.send_offer_email(
+            to=candidate.email,
+            candidate_name=f"{candidate.first_name} {candidate.last_name}",
+            job_title=job.title,
+            review_url=review_url,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc) or "Failed to send offer") from exc
+
     await activity_service.create(
         db,
         candidate_id=offer.candidate_id,
@@ -276,16 +291,6 @@ async def send_offer(db: AsyncSession, offer_id: int, *, actor_id: int) -> Offer
     )
     await db.commit()
     await db.refresh(offer)
-
-    try:
-        mail_service.send_offer_email(
-            to=candidate.email,
-            candidate_name=f"{candidate.first_name} {candidate.last_name}",
-            job_title=job.title,
-            review_url=review_url,
-        )
-    except Exception:  # noqa: BLE001
-        logger.exception("failed to send offer email for offer=%s", offer_id)
 
     return offer
 

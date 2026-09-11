@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 from pydantic import Field, field_validator
 
 from app.db.models.enums import AssessmentStatus
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class InviteCandidateIn(ApiModel):
@@ -26,15 +25,15 @@ class AttemptOut(ApiOutModel):
     candidate_id: int
     assessment_id: int
     status: AssessmentStatus
-    expires_at: datetime
-    started_at: datetime | None
-    completed_at: datetime | None
+    expires_at: UtcDatetime
+    started_at: UtcDatetime | None
+    completed_at: UtcDatetime | None
     score_raw: Decimal | None
     score_total: Decimal | None
     score_percentage: Decimal | None
     passed: bool | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 

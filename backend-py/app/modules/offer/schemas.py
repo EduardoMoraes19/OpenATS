@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 
 from pydantic import Field
@@ -11,7 +11,7 @@ from app.modules.company.schemas import DepartmentOut
 from app.modules.job.schemas import JobOut
 from app.modules.pipeline.schemas import PipelineStageOut
 from app.modules.template.schemas import TemplateOut
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class OfferInputIn(ApiModel):
@@ -53,13 +53,13 @@ class OfferOut(ApiOutModel):
     benefits: str | None
     offer_letter_html: str | None
     review_token: str | None
-    sent_at: datetime | None
-    viewed_at: datetime | None
-    accepted_at: datetime | None
-    declined_at: datetime | None
+    sent_at: UtcDatetime | None
+    viewed_at: UtcDatetime | None
+    accepted_at: UtcDatetime | None
+    declined_at: UtcDatetime | None
     created_by: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 

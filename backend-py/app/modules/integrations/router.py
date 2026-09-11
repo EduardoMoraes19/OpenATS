@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import get_db
 from app.modules.integrations.schemas import AuthorizeUrlOut, ConnectionStatusOut
 from app.shared.auth.deps import get_current_user, require_manager
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 from app.shared.integrations import connection_service
 
 router = APIRouter()

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import pytest
 
+from app.modules.offer import service as offer_service
 from tests.integration.helpers import (
     apply_candidate,
     create_job,
@@ -18,14 +19,28 @@ from tests.integration.helpers import (
 pytestmark = pytest.mark.asyncio
 
 
+@pytest.fixture(autouse=True)
+def _stub_offer_email(monkeypatch):
+    """offer.service.ts's send() awaits the email with no try/catch - a real
+    provider failure (these tests use a dummy RESEND_API_KEY, never a real
+    network call) would surface as a 400, ported in offer/service.py's
+    send_offer(). Stub the send itself so these tests exercise the offer
+    state machine, not Resend's reachability."""
+
+    async def _noop(**kwargs: object) -> None:
+        return None
+
+    monkeypatch.setattr(offer_service.mail_service, "send_offer_email", _noop)
+
+
 def _stage_id_by_type(stages: list[dict], stage_type: str) -> int:
     matches = [s for s in stages if s["stageType"] == stage_type]
     assert matches, f"no {stage_type}-type stage found in seeded pipeline: {stages}"
     return matches[0]["id"]
 
 
-async def test_moving_candidate_into_offer_stage_auto_creates_draft_offer(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_moving_candidate_into_offer_stage_auto_creates_draft_offer(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
     offer_stage_id = _stage_id_by_type(stages, "offer")
@@ -48,8 +63,8 @@ async def test_moving_candidate_into_offer_stage_auto_creates_draft_offer(client
     assert offers[0]["candidateId"] == candidate["id"]
 
 
-async def test_offer_creation_is_idempotent_by_candidate_and_job(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_offer_creation_is_idempotent_by_candidate_and_job(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
 
@@ -65,8 +80,8 @@ async def test_offer_creation_is_idempotent_by_candidate_and_job(client, rsa_key
     assert second.json()["data"]["id"] == first.json()["data"]["id"], "must return the existing offer, not duplicate"
 
 
-async def test_offer_status_machine_rejects_invalid_transition(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_offer_status_machine_rejects_invalid_transition(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     create_response = await client.post(
@@ -79,8 +94,8 @@ async def test_offer_status_machine_rejects_invalid_transition(client, rsa_keypa
     assert response.status_code == 400
 
 
-async def test_send_offer_requires_all_fields_then_succeeds(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_send_offer_requires_all_fields_then_succeeds(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     create_response = await client.post(
@@ -113,12 +128,12 @@ async def test_send_offer_requires_all_fields_then_succeeds(client, rsa_keypair)
     assert sent_offer["reviewToken"], "send() must generate a review token"
 
 
-async def test_offer_detail_and_list_embed_candidate_job_template(client, rsa_keypair):
+async def test_offer_detail_and_list_embed_candidate_job_template(client):
     """offer.service.ts's `getById`/`getAllDetails`/`getPaginated` embed the
     related candidate/job/template via Drizzle relational queries - the list
     variants additionally nest the candidate's current stage and the job's
     department, a level `getById` omits."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
     candidate = await apply_candidate(client, job["id"])
@@ -146,8 +161,8 @@ async def test_offer_detail_and_list_embed_candidate_job_template(client, rsa_ke
     assert paginated["job"]["department"]["id"] == job["departmentId"]
 
 
-async def test_public_offer_flow_view_then_accept_then_mark_hired(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_public_offer_flow_view_then_accept_then_mark_hired(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
     offer_stage_id = _stage_id_by_type(stages, "offer")

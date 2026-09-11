@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import Field, model_validator
 
 from app.db.models.enums import RejectionEmailStatus
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class RejectCandidateIn(ApiModel):
@@ -31,6 +29,6 @@ class RejectionOut(ApiOutModel):
     internal_note: str | None
     template_id: int | None
     email_status: RejectionEmailStatus
-    sent_at: datetime | None
-    rejected_at: datetime
+    sent_at: UtcDatetime | None
+    rejected_at: UtcDatetime
 

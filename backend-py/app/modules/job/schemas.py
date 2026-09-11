@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 from pydantic import Field, model_validator
 
 from app.db.models.enums import EmploymentType, JobStatus, PayFrequency, SalaryType
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class JobBaseIn(ApiModel):
@@ -70,8 +69,8 @@ class JobOut(ApiOutModel):
     status: JobStatus
     application_email_template_id: int | None
     created_by: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 
@@ -89,7 +88,7 @@ class JobAssessmentAttachmentOut(ApiOutModel):
     job_id: int
     assessment_id: int
     trigger_stage_id: int
-    created_at: datetime
+    created_at: UtcDatetime
 
 
 

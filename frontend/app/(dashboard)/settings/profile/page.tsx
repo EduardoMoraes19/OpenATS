@@ -1,34 +1,23 @@
-import { asgardeo } from "@asgardeo/nextjs/server";
+import { serverFetch } from "@/lib/auth-action";
+import type { CurrentUser } from "@/types";
 
-function decodeJWT(token: string) {
-  try {
-    const payload = token.split(".")[1];
-    return JSON.parse(Buffer.from(payload, "base64").toString("utf-8"));
-  } catch {
-    return null;
-  }
-}
+const ROLE_LABELS: Record<CurrentUser["role"], string> = {
+  super_admin: "Super Admin",
+  hiring_manager: "Hiring Manager",
+  interviewer: "Interviewer",
+};
 
 export default async function ProfilePage() {
-  const client = await asgardeo();
-  const sessionId = await client.getSessionId();
-  if (!sessionId) {
-    return <p className="p-6 text-neutral-500">You are not signed in.</p>;
-  }
-  const accessToken = await client.getAccessToken(sessionId);
-  const claims = decodeJWT(accessToken);
-
-  if (!claims) {
+  let user: CurrentUser | null = null;
+  try {
+    const res = await serverFetch<{ data: CurrentUser }>("/users/me");
+    user = res.data;
+  } catch {
     return <p className="p-6 text-neutral-500">You are not signed in.</p>;
   }
 
-  const fullName = claims.given_name
-    ? `${claims.given_name} ${claims.family_name ?? ""}`.trim()
-    : (claims.username ?? claims.sub ?? "User");
-
-  const gravatarUrl = claims.profile ?? null;
-  const country = claims.address?.country ?? null;
-  const roles: string[] = claims.roles ?? [];
+  const fullName = `${user.firstName} ${user.lastName}`.trim();
+  const roleLabel = ROLE_LABELS[user.role];
 
   return (
     <div className="w-full px-8 py-8">
@@ -37,16 +26,16 @@ export default async function ProfilePage() {
           My Profile
         </h1>
         <p className="text-sm text-neutral-500 mt-0.5">
-          Your personal information from your identity provider.
+          Your account information.
         </p>
       </div>
 
       {/* Avatar card */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 mb-4">
         <div className="flex items-center gap-5">
-          {gravatarUrl ? (
+          {user.avatarUrl ? (
             <img
-              src={gravatarUrl}
+              src={user.avatarUrl}
               alt={fullName}
               className="w-16 h-16 rounded-full object-cover flex-shrink-0"
             />
@@ -59,45 +48,26 @@ export default async function ProfilePage() {
             <p className="text-base font-medium text-neutral-900 dark:text-white">
               {fullName}
             </p>
-            <p className="text-sm text-neutral-500 mt-0.5">
-              {claims.email ?? claims.sub}
-            </p>
+            <p className="text-sm text-neutral-500 mt-0.5">{user.email}</p>
             <div className="flex gap-1.5 mt-2 flex-wrap">
-              {roles.map((role) => (
-                <span
-                  key={role}
-                  className="text-xs px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"
-                >
-                  {role}
-                </span>
-              ))}
+              <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700">
+                {roleLabel}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Personal info */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden mb-4">
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
         <div className="px-6 py-3.5 border-b border-neutral-100 dark:border-neutral-800">
           <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
             Personal information
           </p>
         </div>
         <ProfileRow label="Full name" value={fullName} />
-        <ProfileRow label="Email address" value={claims.email ?? claims.sub} />
-        <ProfileRow label="Username" value={claims.username ?? claims.sub} />
-        <ProfileRow label="Country" value={country} last />
-      </div>
-
-      {/* Organization */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden">
-        <div className="px-6 py-3.5 border-b border-neutral-100 dark:border-neutral-800">
-          <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">
-            Organization
-          </p>
-        </div>
-        <ProfileRow label="Organization" value={claims.org_name ?? "s3n4"} />
-        <ProfileRow label="Roles" value={roles.join(", ")} last />
+        <ProfileRow label="Email address" value={user.email} />
+        <ProfileRow label="Role" value={roleLabel} last />
       </div>
     </div>
   );

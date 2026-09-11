@@ -24,7 +24,7 @@ from app.modules.candidate.schemas import (
 from app.queues.cv_analysis.queue import request_cv_analysis
 from app.shared.auth.deps import get_current_user, require_manager
 from app.shared.auth.job_access import can_access_candidate
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 from app.shared.services import r2_service
 from app.sockets.server import notify_candidate_applied, notify_stage_changed
 

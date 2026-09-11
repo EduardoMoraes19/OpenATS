@@ -1,71 +1,87 @@
 "use client";
 
+import { useActionState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { SignInButton, SignIn } from "@asgardeo/nextjs";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Copy01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 
-const DEMO_USERNAME = "demo@openats.dev";
-const DEMO_PASSWORD = "Demo@123#";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { loginAction, type LoginState } from "./actions";
 
-function CredentialRow({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-[14px] font-medium text-slate-600">{label}</span>
-      <button
-        type="button"
-        onClick={handleCopy}
-        className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-slate-900 cursor-pointer hover:text-theme transition-colors"
-      >
-        {value}
-        <HugeiconsIcon
-          icon={copied ? CheckmarkCircle02Icon : Copy01Icon}
-          className={`size-4.5 ${copied ? "text-theme" : "text-slate-600"}`}
-          strokeWidth={2}
-        />
-      </button>
-    </div>
-  );
-}
+const initialState: LoginState = undefined;
 
 export default function LoginPage() {
-  return (
-    <div className="flex min-h-svh items-center justify-center p-6 md:p-8 bg-white">
-      <div className="w-full max-w-sm flex flex-col items-center gap-6">
-        <style jsx>{`
-          :global(.custom-signin h2) {
-            font-size: 0;
-          }
-          :global(.custom-signin h2::after) {
-            content: "Sign in to OpenATS";
-            font-size: 1.375rem;
-          }
-        `}</style>
-        <SignIn
-          size="small"
-          variant="outlined"
-          className="custom-signin"
-          onSuccess={() => {}}
-          onError={() => {}}
-        />
-      </div>
+  const [state, formAction, pending] = useActionState(loginAction, initialState);
+  const [showPassword, setShowPassword] = useState(false);
 
-      <div className="fixed top-6 right-6 w-96 rounded-xl border border-theme/30 bg-theme/5 p-6">
-        <p className="text-[15px] font-semibold tracking-wider text-theme mb-3">
-          Demo credentials
-        </p>
-        <div className="flex flex-col gap-2">
-          <CredentialRow label="Username" value={DEMO_USERNAME} />
-          <CredentialRow label="Password" value={DEMO_PASSWORD} />
+  return (
+    <div className="flex min-h-svh items-center justify-center p-6 md:p-8 bg-white dark:bg-neutral-950">
+      <div className="w-full max-w-sm flex flex-col gap-6">
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-neutral-100">
+            Sign in to OpenATS
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-neutral-400">
+            Enter your email and password to continue.
+          </p>
         </div>
+
+        <form action={formAction} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="you@company.com"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                placeholder="Enter your password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-neutral-300"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {state?.error ? (
+            <p className="text-sm font-medium text-red-600" role="alert">
+              {state.error}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            disabled={pending}
+            className="h-10 rounded-lg text-white font-semibold text-sm shadow-none border-none"
+            style={{ backgroundColor: "var(--theme-color)" }}
+          >
+            {pending ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
       </div>
     </div>
   );

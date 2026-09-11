@@ -75,7 +75,7 @@ async def invite_candidate(
     )
     invite_url = f"{settings.frontend_url}/assessment/{token}"
     try:
-        mail_service.send_assessment_invite_email(
+        await mail_service.send_assessment_invite_email(
             to=candidate.email,
             subject=f"Assessment invite: {assessment.title}",
             body_html=f'<p>Hi {candidate.first_name},</p><p>Please complete your assessment: '
@@ -215,7 +215,7 @@ async def complete_attempt(
     candidate = await db.get(Candidate, attempt.candidate_id)
     assert candidate is not None, "guaranteed by the candidates.id FK on candidate_assessment_attempts"
     try:
-        mail_service.send_assessment_completion_email(
+        await mail_service.send_assessment_completion_email(
             to=candidate.email,
             candidate_name=f"{candidate.first_name} {candidate.last_name}",
             auto_submit_reason=auto_submit_reason,

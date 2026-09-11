@@ -23,7 +23,7 @@ from app.modules.interview.schemas import (
     UpdateInterviewIn,
 )
 from app.shared.auth.deps import get_current_user, require_manager
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 from app.sockets.server import notify_interview_changed
 
 router = APIRouter()

@@ -29,8 +29,8 @@ async def _create_rejection_template(client, headers) -> dict:
     return response.json()["data"]
 
 
-async def test_reject_with_sent_email_returns_rendered_subject_and_html(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_reject_with_sent_email_returns_rendered_subject_and_html(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
     template = await _create_rejection_template(client, headers)
@@ -56,8 +56,8 @@ async def test_reject_with_sent_email_returns_rendered_subject_and_html(client, 
     assert candidate_response.json()["data"]["status"] == "rejected"
 
 
-async def test_reject_without_sending_email_leaves_rendered_fields_null(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_reject_without_sending_email_leaves_rendered_fields_null(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     candidate = await apply_candidate(client, job["id"])
 
@@ -73,7 +73,7 @@ async def test_reject_without_sending_email_leaves_rendered_fields_null(client, 
     assert rejection["renderedHtml"] is None
 
 
-async def test_template_preview_uses_raw_body_as_context_with_no_candidate_enrichment(client, rsa_keypair):
+async def test_template_preview_uses_raw_body_as_context_with_no_candidate_enrichment(client):
     """template.controller.ts's previewTemplate is the only reachable
     handler for POST /templates/:id/preview - Express registers
     template.routes.ts (mounted at "/templates") before rejections.routes.ts's
@@ -81,7 +81,7 @@ async def test_template_preview_uses_raw_body_as_context_with_no_candidate_enric
     never does candidate-id enrichment or a generic-context fallback: it
     compiles the template against the raw request body verbatim, and
     returns the full compileTemplate() result (subject, bodyJson, html)."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     template = await _create_rejection_template(client, headers)
 
     response = await client.post(

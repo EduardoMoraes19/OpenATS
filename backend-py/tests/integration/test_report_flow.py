@@ -28,8 +28,8 @@ def _clear_report_cache():
     yield
 
 
-async def test_analytics_returns_full_shape(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_analytics_returns_full_shape(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     await apply_candidate(client, job["id"])
 
@@ -84,8 +84,8 @@ async def test_analytics_returns_full_shape(client, rsa_keypair):
         assert set(row.keys()) == {"dept", "days"}
 
 
-async def test_analytics_accepts_period_and_department_filter(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_analytics_accepts_period_and_department_filter(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
 
     response = await client.get(
@@ -98,26 +98,26 @@ async def test_analytics_accepts_period_and_department_filter(client, rsa_keypai
     assert data["summary"]["openPositions"] >= 1
 
 
-async def test_analytics_rejects_invalid_period(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_analytics_rejects_invalid_period(client):
+    headers = await manager_headers()
     response = await client.get("/api/reports/analytics", params={"period": "1d"}, headers=headers)
     assert response.status_code == 400
 
 
-async def test_analytics_no_data_falls_back_to_website_source(client, rsa_keypair):
+async def test_analytics_no_data_falls_back_to_website_source(client):
     """No candidates/offers seeded at all -> sourceOfCandidates falls back
     to the TS source's `[{"name": "Website", "value": 100}]` sentinel."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     response = await client.get("/api/reports/analytics", headers=headers)
     assert response.status_code == 200, response.text
     data = response.json()["data"]
     assert data["sourceOfCandidates"] == [{"name": "Website", "value": 100}]
 
 
-async def test_export_json_returns_plain_json_body_not_a_file(client, rsa_keypair):
+async def test_export_json_returns_plain_json_body_not_a_file(client):
     """Critically, the TS export endpoint does not stream a file - it's a
     plain `{data: {format, fileName, mimeType, content}}` JSON body."""
-    headers = await manager_headers(rsa_keypair)
+    headers = await manager_headers()
     job = await create_job(client, headers)
     await apply_candidate(client, job["id"])
 
@@ -147,8 +147,8 @@ async def test_export_json_returns_plain_json_body_not_a_file(client, rsa_keypai
     }
 
 
-async def test_export_csv_returns_plain_json_body_with_csv_string(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_export_csv_returns_plain_json_body_with_csv_string(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     await apply_candidate(client, job["id"])
 
@@ -173,12 +173,10 @@ async def test_export_csv_returns_plain_json_body_with_csv_string(client, rsa_ke
     assert '"=== Offer Trends ==="' in content
 
 
-async def test_export_requires_manager_role(client, rsa_keypair):
+async def test_export_requires_manager_role(client):
     from tests.conftest import make_bearer_token
 
-    interviewer_token = make_bearer_token(
-        rsa_keypair, sub="interviewer-1", email="interviewer@example.com", role="interviewer"
-    )
+    interviewer_token = await make_bearer_token(email="interviewer@example.com", role="interviewer")
     response = await client.get(
         "/api/reports/analytics/export",
         headers={"Authorization": f"Bearer {interviewer_token}"},

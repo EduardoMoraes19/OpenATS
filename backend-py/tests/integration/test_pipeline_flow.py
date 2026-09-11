@@ -14,8 +14,8 @@ from tests.integration.helpers import create_job, get_pipeline_stages, manager_h
 pytestmark = pytest.mark.asyncio
 
 
-async def test_reorder_swaps_two_stages_by_explicit_id_position_pairs(client, rsa_keypair):
-    headers = await manager_headers(rsa_keypair)
+async def test_reorder_swaps_two_stages_by_explicit_id_position_pairs(client):
+    headers = await manager_headers()
     job = await create_job(client, headers)
     stages = await get_pipeline_stages(client, headers, job["id"])
     assert len(stages) >= 2, f"seeded pipeline too short to test a swap: {stages}"

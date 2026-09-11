@@ -15,7 +15,7 @@ from app.db.models.candidates import Candidate
 from app.db.models.jobs import Job, JobSkill
 from app.db.models.offers import Offer
 from app.db.models.pipeline import JobHiringTeam, JobPipelineStage, PipelineStageTemplate
-from app.shared.auth.verify_token import AuthenticatedUser
+from app.shared.auth.jwt_auth import AuthenticatedUser
 from app.shared.db_errors import is_unique_violation
 
 

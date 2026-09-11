@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
-
-from app.shared.schema import ApiModel
+from app.shared.schema import ApiModel, UtcDatetime
 
 
 class HiringTeamMemberOut(ApiModel):
     id: int
     job_id: int
     user_id: int
-    added_at: datetime
+    added_at: UtcDatetime
     first_name: str
     last_name: str
     email: str

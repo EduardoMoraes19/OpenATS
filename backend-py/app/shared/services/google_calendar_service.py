@@ -9,6 +9,7 @@ calendar, independent of which interviewer is assigned.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timedelta
 from typing import Any
@@ -80,7 +81,7 @@ def _build_description(event_input: CalendarEventInput) -> str:
     return "\n".join(lines)
 
 
-def create_calendar_event(event_input: CalendarEventInput) -> str:
+def _create_calendar_event_blocking(event_input: CalendarEventInput) -> str:
     client = _get_calendar_client()
     end_time = event_input.scheduled_at + timedelta(minutes=event_input.duration_minutes)
 
@@ -108,7 +109,14 @@ def create_calendar_event(event_input: CalendarEventInput) -> str:
     return event_id
 
 
-def update_calendar_event(google_event_id: str, event_input: CalendarEventInput) -> None:
+async def create_calendar_event(event_input: CalendarEventInput) -> str:
+    # See the module docstring: the googleapiclient HTTP calls here are
+    # blocking, so they're offloaded to a worker thread rather than run
+    # directly on the asyncio event loop.
+    return await asyncio.to_thread(_create_calendar_event_blocking, event_input)
+
+
+def _update_calendar_event_blocking(google_event_id: str, event_input: CalendarEventInput) -> None:
     client = _get_calendar_client()
     end_time = event_input.scheduled_at + timedelta(minutes=event_input.duration_minutes)
 
@@ -123,8 +131,16 @@ def update_calendar_event(google_event_id: str, event_input: CalendarEventInput)
     client.events().patch(calendarId=_calendar_id(), eventId=google_event_id, body=body).execute()
 
 
-def delete_calendar_event(google_event_id: str) -> None:
+async def update_calendar_event(google_event_id: str, event_input: CalendarEventInput) -> None:
+    await asyncio.to_thread(_update_calendar_event_blocking, google_event_id, event_input)
+
+
+def _delete_calendar_event_blocking(google_event_id: str) -> None:
     client = _get_calendar_client()
     client.events().delete(
         calendarId=_calendar_id(), eventId=google_event_id, sendUpdates="all"
     ).execute()
+
+
+async def delete_calendar_event(google_event_id: str) -> None:
+    await asyncio.to_thread(_delete_calendar_event_blocking, google_event_id)

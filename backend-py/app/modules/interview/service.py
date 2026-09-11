@@ -55,7 +55,7 @@ async def _sync_calendar_create(
             duration_minutes=interview.duration_minutes or 30,
             attendee_emails=attendee_emails,
         )
-        interview.google_event_id = google_calendar_service.create_calendar_event(event_input)
+        interview.google_event_id = await google_calendar_service.create_calendar_event(event_input)
         await db.commit()
     except Exception:  # noqa: BLE001
         logger.exception("failed to sync interview=%s to Google Calendar", interview.id)
@@ -77,7 +77,7 @@ async def _sync_calendar_update(db: AsyncSession, interview: CandidateInterview)
             scheduled_at=interview.scheduled_at,
             duration_minutes=interview.duration_minutes or 30,
         )
-        google_calendar_service.update_calendar_event(interview.google_event_id, event_input)
+        await google_calendar_service.update_calendar_event(interview.google_event_id, event_input)
     except Exception:  # noqa: BLE001
         logger.exception("failed to re-sync interview=%s to Google Calendar", interview.id)
 
@@ -110,7 +110,7 @@ async def create_interview(db: AsyncSession, candidate_id: int, *, data: dict, c
         try:
             job = await db.get(Job, candidate.job_id)
             assert job is not None, "guaranteed by the jobs.id FK on candidates"
-            mail_service.send_interview_invite_email(
+            await mail_service.send_interview_invite_email(
                 to=candidate.email,
                 candidate_name=f"{candidate.first_name} {candidate.last_name}",
                 job_title=job.title,
@@ -222,7 +222,7 @@ async def schedule_interview(
     try:
         job = await db.get(Job, candidate.job_id)
         assert job is not None, "guaranteed by the jobs.id FK on candidates"
-        mail_service.send_interview_slot_email(
+        await mail_service.send_interview_slot_email(
             to=candidate.email,
             candidate_name=f"{candidate.first_name} {candidate.last_name}",
             job_title=job.title,
@@ -403,7 +403,7 @@ async def select_slot(db: AsyncSession, token: str, *, slot_index: int) -> tuple
                 duration_minutes=60,
                 attendee_emails=[candidate.email] + ([interviewer.email] if interviewer else []),
             )
-            google_event_id = google_calendar_service.create_calendar_event(event_input)
+            google_event_id = await google_calendar_service.create_calendar_event(event_input)
         except Exception:  # noqa: BLE001
             logger.exception("failed to create calendar event for interview=%s", interview.id)
 
@@ -417,7 +417,7 @@ async def select_slot(db: AsyncSession, token: str, *, slot_index: int) -> tuple
 
     if interview.event_name:
         try:
-            mail_service.send_interview_confirmation_email(
+            await mail_service.send_interview_confirmation_email(
                 to=candidate.email,
                 candidate_name=f"{candidate.first_name} {candidate.last_name}",
                 job_title=job.title,
@@ -448,7 +448,7 @@ async def delete_interview(db: AsyncSession, interview_id: int) -> None:
 
     if interview.google_event_id:
         try:
-            google_calendar_service.delete_calendar_event(interview.google_event_id)
+            await google_calendar_service.delete_calendar_event(interview.google_event_id)
         except Exception:  # noqa: BLE001
             logger.exception("failed to delete calendar event for interview=%s", interview_id)
 
@@ -460,7 +460,7 @@ async def delete_interview(db: AsyncSession, interview_id: int) -> None:
 
     if was_scheduled and candidate is not None and job is not None:
         try:
-            mail_service.send_interview_cancellation_email(
+            await mail_service.send_interview_cancellation_email(
                 to=candidate.email,
                 candidate_name=f"{candidate.first_name} {candidate.last_name}",
                 job_title=job.title,

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 from pydantic import Field, model_validator
 
 from app.db.models.enums import QuestionType
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 _ASSESSMENT_QUESTION_TYPES = {QuestionType.short_answer, QuestionType.multiple_choice}
 
@@ -57,8 +56,8 @@ class AssessmentQuestionOut(ApiOutModel):
     question_type: QuestionType
     points: Decimal
     position: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
     options: list[QuestionOptionOut] = Field(default_factory=list)
 
 
@@ -82,7 +81,7 @@ class AssessmentOut(ApiOutModel):
     description: str | None
     time_limit: int
     created_by: int
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
     questions: list[AssessmentQuestionOut] = Field(default_factory=list)
 

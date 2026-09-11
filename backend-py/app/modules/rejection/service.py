@@ -75,7 +75,7 @@ async def reject(
         context = await get_context_for_candidate(db, candidate)
         compiled = compile_template(subject=template.subject, body_json=template.body_json, context=context)
         try:
-            mail_service.send_rejection_email(
+            await mail_service.send_rejection_email(
                 to=candidate.email,
                 candidate_name=f"{candidate.first_name} {candidate.last_name}",
                 job_title=job.title,

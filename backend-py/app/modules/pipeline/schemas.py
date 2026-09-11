@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from pydantic import Field
 
 from app.db.models.enums import StageType
-from app.shared.schema import ApiModel, ApiOutModel
+from app.shared.schema import ApiModel, ApiOutModel, UtcDatetime
 
 
 class PipelineStageOut(ApiOutModel):
@@ -15,8 +13,8 @@ class PipelineStageOut(ApiOutModel):
     position: int
     stage_type: StageType
     source_template_id: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
 
 
 

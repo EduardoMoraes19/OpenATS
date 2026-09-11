@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import get_db
 from app.logging import get_logger
 from app.shared.auth.job_access import can_access_candidate, can_access_job, parse_room_id
-from app.shared.auth.verify_token import AuthenticatedUser, AuthError, verify_access_token
+from app.shared.auth.jwt_auth import AuthenticatedUser, AuthError, get_user_from_token
 
 logger = get_logger(__name__)
 
@@ -31,7 +31,7 @@ async def get_current_user(
     token = header.removeprefix("Bearer ").strip()
 
     try:
-        user = await verify_access_token(token, db)
+        user = await get_user_from_token(token, db)
     except AuthError as exc:
         logger.warning("auth error: %s", exc.message)
         raise HTTPException(status_code=exc.status, detail=exc.message) from exc

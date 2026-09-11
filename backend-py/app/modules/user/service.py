@@ -1,4 +1,10 @@
-"""Equivalent to backend/src/modules/user/user.service.ts."""
+"""Equivalent to backend/src/modules/user/user.service.ts.
+
+Users are only ever created explicitly by an admin via `POST /api/users`
+now - there is no external IdP triggering "first login" JIT provisioning,
+so (unlike the original TS/Asgardeo version) `create_user` is a plain
+insert, not a reconcile-by-email-or-external-id upsert.
+"""
 
 from __future__ import annotations
 
@@ -6,7 +12,9 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models.enums import AppRole
 from app.db.models.users import User
+from app.shared.auth.jwt_auth import hash_password
 
 
 async def list_active_users(db: AsyncSession) -> list[User]:
@@ -22,28 +30,21 @@ async def get_user(db: AsyncSession, user_id: int) -> User:
 
 
 async def create_user(
-    db: AsyncSession, *, asgardeo_user_id: str, first_name: str, last_name: str, email: str
+    db: AsyncSession,
+    *,
+    first_name: str,
+    last_name: str,
+    email: str,
+    password: str,
+    role: AppRole,
 ) -> User:
-    """Reactivates a soft-deleted row matching email OR asgardeo_user_id
-    instead of duplicate-inserting - port of user.service.ts's create()."""
-    result = await db.execute(
-        select(User).where(
-            (User.email == email) | (User.asgardeo_user_id == asgardeo_user_id)
-        )
-    )
-    existing = result.scalar_one_or_none()
-    if existing is not None:
-        existing.asgardeo_user_id = asgardeo_user_id
-        existing.first_name = first_name
-        existing.last_name = last_name
-        existing.email = email
-        existing.is_active = True
-        await db.commit()
-        await db.refresh(existing)
-        return existing
-
     user = User(
-        asgardeo_user_id=asgardeo_user_id, first_name=first_name, last_name=last_name, email=email
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password_hash=hash_password(password),
+        role=role,
+        token_version=0,
     )
     db.add(user)
     await db.commit()
@@ -59,6 +60,7 @@ async def update_user(
     last_name: str | None,
     avatar_url: str | None,
     is_active: bool | None,
+    role: AppRole | None,
 ) -> User:
     user = await get_user(db, user_id)
     if first_name is not None:
@@ -69,6 +71,14 @@ async def update_user(
         user.avatar_url = avatar_url
     if is_active is not None:
         user.is_active = is_active
+    if role is not None and role != user.role:
+        # The JWT carries the role as a claim (see jwt_auth.create_access_token),
+        # so an outstanding token for this user still asserts the OLD role.
+        # Bumping token_version invalidates it immediately (get_user_from_token
+        # rejects any token whose `tv` claim doesn't match), instead of letting
+        # a demoted user keep acting under their previous role until it expires.
+        user.role = role
+        user.token_version += 1
     await db.commit()
     await db.refresh(user)
     return user
