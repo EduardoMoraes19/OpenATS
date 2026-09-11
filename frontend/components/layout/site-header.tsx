@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Inter_Tight } from "next/font/google";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Notification03Icon } from "@hugeicons/core-free-icons";
@@ -21,6 +22,13 @@ export function SiteHeader() {
           href="/"
           className={`${interTight.className} flex items-center gap-2 text-2xl leading-none tracking-tight text-black dark:text-white select-none`}
         >
+          <Image
+            src="/assets/featcode-symbol.png"
+            alt=""
+            width={36}
+            height={32}
+            className="h-8 w-auto object-contain"
+          />
           featTalent
         </Link>
 
