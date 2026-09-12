@@ -80,7 +80,7 @@ Playwright lives at the repo root because an E2E test spans both `backend-py/` a
 
 This is the part worth understanding properly, because getting it wrong means tests write into your development data.
 
-There are two Postgres containers, both defined in the root `docker-compose.yml`:
+There are two Postgres containers: the dev one in the root `docker-compose.yml`, and the test one in its own `docker-compose.test.yml`.
 
 | Container | Port | Database | Storage | Used by |
 | --- | --- | --- | --- | --- |
@@ -126,7 +126,7 @@ cd ..
 Start the test database and apply the schema to it:
 
 ```bash
-docker compose up -d postgres-test
+docker compose -f docker-compose.test.yml up -d
 cd backend-py
 DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/alembic upgrade head
 cd ..

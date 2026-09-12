@@ -57,8 +57,8 @@ pnpm lint     # eslint
 
 - PostgreSQL via **SQLAlchemy 2.0** (async) + **Alembic**. Models live in `app/db/models/` (one file per domain), matching the original 33-table/16-enum schema exactly - every `timestamp` column is `DateTime(timezone=False)` (naive, always a UTC instant in practice; see `to_utc_iso_z()` for why the API layer must add the `Z` back on the way out).
 - When changing the schema: run `alembic revision --autogenerate -m "..."` in `backend-py/`, **review the generated migration** (autogenerate misses some things - renamed columns look like drop+add, for one), then commit it.
-- The seed (`app/db/seed.py`) creates 7 default pipeline stage templates - required for job creation to work (`job/service.py` clones them into `job_pipeline_stages` on every new job).
-- **Local Postgres + Redis**: `docker-compose.yml` at the repo root runs both as containers (`openats`/`openats`/`openats` for user/password/db on the dev Postgres; a separate `tmpfs`-backed Postgres on port 5433 for tests; Redis with no auth). See `CONTRIBUTING.md` for the full setup flow.
+- The 7 default pipeline stage templates - required for job creation to work (`job/service.py` clones them into `job_pipeline_stages` on every new job) - are seeded by migration `0003_seed_pipeline_stages`, so a fresh `alembic upgrade head` is enough on its own. `app/db/seed.py` (`make seed`) does the same insert (delete-then-recreate) and stays useful for resetting templates back to default on an existing database.
+- **Local Postgres + Redis**: `docker-compose.yml` at the repo root runs the dev Postgres and Redis as containers (`openats`/`openats`/`openats` for user/password/db; Redis with no auth); `docker-compose.test.yml` runs a separate `tmpfs`-backed Postgres on port 5433 for tests. See `CONTRIBUTING.md` for the full setup flow.
 
 ### Frontend
 

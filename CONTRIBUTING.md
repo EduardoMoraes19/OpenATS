@@ -294,7 +294,7 @@ There are three kinds of tests:
 Start the test database and apply the schema to it:
 
 ```bash
-docker compose up -d postgres-test
+docker compose -f docker-compose.test.yml up -d
 cd backend-py
 DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/alembic upgrade head
 cd ..
