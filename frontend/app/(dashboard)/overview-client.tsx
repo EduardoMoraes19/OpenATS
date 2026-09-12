@@ -28,6 +28,7 @@ import {
 } from "@/hooks/queries/use-reports";
 import { useDepartments } from "@/hooks/queries/use-company";
 import { useIsManager } from "@/hooks/use-role";
+import { useCurrentUser } from "@/hooks/queries/use-user";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -69,6 +70,8 @@ const PERIOD_LABELS: Record<string, string> = {
 
 export function OverviewClient() {
   const isManager = useIsManager();
+  const { data: currentUserRes } = useCurrentUser();
+  const firstName = currentUserRes?.data?.firstName;
   const [period, setPeriod] = useState<"7d" | "30d" | "90d">("7d");
   const [dept, setDept] = useState("all");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -157,7 +160,9 @@ export function OverviewClient() {
       {/* Header */}
       <div className="px-6 pt-4 pb-3 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-medium text-slate-900 dark:text-neutral-100 leading-none">
-          How Your Hiring Is Going
+          {firstName
+            ? `Hi ${firstName}, how is your hiring going?`
+            : "Hi, how is your hiring going?"}
         </h1>
 
         <div className="flex items-center gap-2">
