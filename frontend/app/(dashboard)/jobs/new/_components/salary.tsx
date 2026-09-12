@@ -108,14 +108,15 @@ export function SalarySection({
                 </Label>
                 <Select
                   value={currency}
-                  onValueChange={(val) => onCurrencyChange(val || "USD")}
+                  onValueChange={(val) => onCurrencyChange(val || "BRL")}
                 >
                   <SelectTrigger className="w-full h-10! bg-gray-100 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-600 shadow-none rounded-lg text-slate-500 dark:text-neutral-400 focus:ring-0 focus:border-slate-300 dark:focus:border-neutral-600">
-                    <SelectValue placeholder="USD" />
+                    <SelectValue placeholder="BRL" />
                   </SelectTrigger>
                   <SelectContent className="rounded-lg shadow-lg border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
                     <SelectItem value="USD">USD</SelectItem>
                     <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="BRL">BRL</SelectItem>
                     <SelectItem value="LKR">LKR</SelectItem>
                   </SelectContent>
                 </Select>

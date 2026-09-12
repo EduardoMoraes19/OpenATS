@@ -49,7 +49,7 @@ export default function CreateNewJobPage() {
   const [employmentType, setEmploymentType] = useState<string | null>(null);
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("BRL");
   const [payFrequency, setPayFrequency] = useState("yearly");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
@@ -343,14 +343,15 @@ export default function CreateNewJobPage() {
                       </Label>
                       <Select
                         value={currency}
-                        onValueChange={(val) => setCurrency(val || "USD")}
+                        onValueChange={(val) => setCurrency(val || "BRL")}
                       >
                         <SelectTrigger className="w-full h-10! bg-gray-100 dark:bg-neutral-800 border border-slate-300 dark:border-neutral-600 shadow-none rounded-lg text-slate-500 dark:text-neutral-400 focus:ring-0 focus:border-slate-300 dark:focus:border-neutral-600">
-                          <SelectValue placeholder="USD" />
+                          <SelectValue placeholder="BRL" />
                         </SelectTrigger>
                         <SelectContent className="rounded-lg shadow-lg border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
                           <SelectItem value="USD">USD</SelectItem>
                           <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="BRL">BRL</SelectItem>
                           <SelectItem value="LKR">LKR</SelectItem>
                         </SelectContent>
                       </Select>

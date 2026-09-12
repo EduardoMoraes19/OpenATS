@@ -82,7 +82,7 @@ function EditJobForm({
   const [salaryType, setSalaryType] = useState<"range" | "fixed">(
     job.salaryType === "fixed" ? "fixed" : "range",
   );
-  const [currency, setCurrency] = useState(job.currency ?? "USD");
+  const [currency, setCurrency] = useState(job.currency ?? "BRL");
   const [payFrequency, setPayFrequency] = useState(
     job.payFrequency ?? "yearly",
   );
@@ -367,14 +367,15 @@ function EditJobForm({
                   </Label>
                   <Select
                     value={currency}
-                    onValueChange={(val) => setCurrency(val || "USD")}
+                    onValueChange={(val) => setCurrency(val || "BRL")}
                   >
                     <SelectTrigger className="w-full h-10! bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 shadow-none rounded-lg text-slate-500 dark:text-neutral-400 focus:ring-0">
-                      <SelectValue placeholder="USD" />
+                      <SelectValue placeholder="BRL" />
                     </SelectTrigger>
                     <SelectContent className="rounded-lg shadow-lg border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
                       <SelectItem value="USD">USD</SelectItem>
                       <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="BRL">BRL</SelectItem>
                       <SelectItem value="LKR">LKR</SelectItem>
                     </SelectContent>
                   </Select>

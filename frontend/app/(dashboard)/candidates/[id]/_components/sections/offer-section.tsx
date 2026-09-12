@@ -89,7 +89,7 @@ export function OfferSection({
 
   const [isEditingOffer, setIsEditingOffer] = useState(false);
   const [editSalary, setEditSalary] = useState("");
-  const [editCurrency, setEditCurrency] = useState("USD");
+  const [editCurrency, setEditCurrency] = useState("BRL");
   const [editEmploymentType, setEditEmploymentType] = useState<
     "full_time" | "part_time" | "contract" | "internship" | "freelance"
   >("full_time");
@@ -102,7 +102,7 @@ export function OfferSection({
   const syncOfferForm = () => {
     if (!offer) return;
     setEditSalary(offer.salary ? String(Number(offer.salary)) : "");
-    setEditCurrency(offer.currency ?? "USD");
+    setEditCurrency(offer.currency ?? "BRL");
     setEditEmploymentType(offer.employmentType ?? "full_time");
     setEditStartDate(offer.startDate ?? "");
     setEditReportingManager(offer.reportingManager ?? "");
@@ -335,7 +335,7 @@ export function OfferSection({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["USD", "EUR", "GBP", "LKR", "INR", "AUD"].map((c) => (
+                    {["USD", "EUR", "BRL", "GBP", "LKR", "INR", "AUD"].map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
                       </SelectItem>

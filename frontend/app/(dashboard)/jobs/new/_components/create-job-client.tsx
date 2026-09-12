@@ -35,7 +35,7 @@ export default function CreateJobPageClient() {
 
   const [isSalaryInfoIncluded, setIsSalaryInfoIncluded] = useState(true);
   const [salaryType, setSalaryType] = useState<"range" | "fixed">("range");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("BRL");
   const [payFrequency, setPayFrequency] = useState("yearly");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
