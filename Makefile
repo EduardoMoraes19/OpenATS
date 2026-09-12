@@ -60,9 +60,11 @@ secret-key:
 
 infra-up:
 	docker compose up -d
+	docker compose -f docker-compose.test.yml up -d
 
 infra-down:
 	docker compose down
+	docker compose -f docker-compose.test.yml down
 
 wait-for-db:
 	@echo "⏳ Waiting for Postgres to accept connections..."
@@ -106,6 +108,7 @@ clean:
 	rm -rf node_modules frontend/node_modules backend-py/.venv
 
 test:
+	docker compose -f docker-compose.test.yml up -d
 	# Explicit DATABASE_URL, not whatever backend-py/.env happens to have -
 	# tests must never run against the dev database regardless of local config.
 	cd backend-py && DATABASE_URL=postgresql+asyncpg://openats:openats@localhost:5433/openats_test .venv/bin/pytest tests/ -q

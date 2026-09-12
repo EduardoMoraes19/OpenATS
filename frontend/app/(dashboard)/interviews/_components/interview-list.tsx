@@ -193,7 +193,7 @@ export function InterviewList({
                             e.stopPropagation();
                             onFeedback(iv);
                           }}
-                          className="inline-flex items-center gap-1.5 h-7 rounded-md px-2.5 text-sm font-semibold text-white shadow-none transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 h-7 rounded-md px-2.5 text-sm font-semibold text-[#121212] shadow-none transition-colors cursor-pointer"
                           style={{
                             backgroundColor: "var(--theme-color)",
                           }}

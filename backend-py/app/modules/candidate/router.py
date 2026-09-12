@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 from math import ceil
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import get_db
@@ -266,6 +266,36 @@ async def get_candidate(
 
     detail = await service.get_candidate_detail(db, candidate_id)
     return _candidate_detail_dict(detail)
+
+
+@router.get("/{candidate_id}/resume")
+async def get_candidate_resume(
+    candidate_id: int,
+    user: AuthenticatedUser = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    if user.role == "interviewer" and not await can_access_candidate(db, user, candidate_id):
+        raise HTTPException(status_code=403, detail="You do not have access to this resource")
+
+    candidate = await service.get_candidate(db, candidate_id)
+    key = r2_service.extract_key_from_url(candidate.resume_url) if candidate.resume_url else None
+    if key is None:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    try:
+        content, content_type = await asyncio.to_thread(r2_service.download_file_with_content_type, key)
+    except Exception:  # noqa: BLE001
+        logger.exception("failed to stream candidate resume id=%s", candidate_id)
+        raise HTTPException(status_code=404, detail="Resume not found") from None
+
+    return Response(
+        content=content,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": "inline",
+            "Cache-Control": "private, max-age=300",
+        },
+    )
 
 
 @router.patch("/{candidate_id}", response_model=CandidateOut, dependencies=[Depends(require_manager)])

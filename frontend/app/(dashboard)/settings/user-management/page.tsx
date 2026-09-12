@@ -623,7 +623,7 @@ export default function UserManagementPage() {
             <Button
               onClick={submitCreate}
               disabled={creating}
-              className="h-10 px-6 rounded-lg text-white font-semibold text-sm shadow-none border-none w-full sm:w-auto"
+              className="h-10 px-6 rounded-lg text-[#121212] font-semibold text-sm shadow-none border-none w-full sm:w-auto"
               style={{ backgroundColor: "var(--theme-color)" }}
             >
               {creating ? "Finishing…" : "Finish"}
@@ -707,7 +707,7 @@ export default function UserManagementPage() {
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="h-9 px-5 cursor-pointer rounded-lg text-white text-sm font-semibold shadow-none border-none"
+              className="h-9 px-5 cursor-pointer rounded-lg text-[#121212] text-sm font-semibold shadow-none border-none"
               style={{ backgroundColor: "var(--theme-color)" }}
             >
               {saving ? "Saving…" : "Save"}

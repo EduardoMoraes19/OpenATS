@@ -86,7 +86,7 @@ export default function CreateAssessmentPageClient() {
 
         <div className="flex items-center gap-3 shrink-0">
           <Button
-            className="text-white cursor-pointer rounded-lg h-10 px-6 font-medium shadow-none border-none transition-all active:scale-[0.98] disabled:opacity-70 gap-2"
+            className="text-[#121212] cursor-pointer rounded-lg h-10 px-6 font-medium shadow-none border-none transition-all active:scale-[0.98] disabled:opacity-70 gap-2"
             style={{ backgroundColor: "var(--theme-color)" }}
             onClick={handleSave}
             disabled={createAssessment.isPending}

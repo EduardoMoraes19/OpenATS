@@ -77,7 +77,7 @@ export default function FeedbackDialog({
               }
             }}
             disabled={!feedbackText.trim() || addFeedbackMutation.isPending}
-            className="h-8 rounded-md border-none px-4 text-sm font-semibold leading-none text-white shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="h-8 rounded-md border-none px-4 text-sm font-semibold leading-none text-[#121212] shadow-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             style={{ backgroundColor: "var(--theme-color)" }}
           >
             {addFeedbackMutation.isPending ? "Saving…" : "Save Feedback"}

@@ -85,6 +85,12 @@ def download_file(key: str) -> bytes:
     return response["Body"].read()
 
 
+def download_file_with_content_type(key: str) -> tuple[bytes, str]:
+    response = _r2_client.get_object(Bucket=settings.r2_bucket_name, Key=key)
+    content_type = response.get("ContentType") or "application/octet-stream"
+    return response["Body"].read(), content_type
+
+
 def extract_key_from_url(file_url: str) -> str | None:
     base = settings.r2_public_url.rstrip("/")
     if not file_url.startswith(base):

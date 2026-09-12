@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import {
   Download05Icon,
-  ListViewIcon,
-  TextIcon,
+  Csv01Icon,
+  DocumentCodeIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -31,6 +31,7 @@ import { useIsManager } from "@/hooks/use-role";
 import { useCurrentUser } from "@/hooks/queries/use-user";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   PipelineChart,
   VolumeChart,
@@ -299,7 +300,7 @@ export function OverviewClient() {
                   )}
                 </span>
                 <HugeiconsIcon
-                  icon={fmt === "json" ? TextIcon : ListViewIcon}
+                  icon={fmt === "json" ? DocumentCodeIcon : Csv01Icon}
                   className={`size-4 shrink-0 ${exportFormat === fmt ? "text-theme" : "text-slate-400 dark:text-neutral-500"}`}
                 />
                 <div>
@@ -320,8 +321,8 @@ export function OverviewClient() {
             <DialogClose
               render={
                 <Button
-                  variant="outline"
-                  className="flex-1 h-9 rounded-lg border-slate-200 dark:border-neutral-700 text-white dark:text-neutral-300 text-sm shadow-none cursor-pointer"
+                  variant="ghost"
+                  className="h-9 flex-1 cursor-pointer rounded-md border-2 border-slate-300 bg-white text-sm font-medium text-slate-600 shadow-none hover:bg-slate-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 />
               }
             >
@@ -330,9 +331,10 @@ export function OverviewClient() {
             <Button
               onClick={handleExport}
               disabled={exportReport.isPending}
-              className="flex-1 h-9 bg-theme hover:bg-theme-hover text-[#121212] rounded-lg border border-theme shadow-none text-sm font-semibold cursor-pointer"
+              className="h-9 flex-1 cursor-pointer gap-2 rounded-md border border-theme bg-theme text-sm font-semibold text-[#121212] shadow-none hover:bg-theme-hover"
             >
-              {exportReport.isPending ? "Exporting..." : "Export"}
+              {exportReport.isPending && <Spinner className="size-3.5" />}
+              {exportReport.isPending ? "Exporting" : "Export"}
             </Button>
           </DialogFooter>
         </DialogContent>

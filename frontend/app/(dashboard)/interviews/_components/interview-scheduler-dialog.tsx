@@ -443,7 +443,7 @@ export function InterviewSchedulerDialog({
                 !meetingUrl.trim()) ||
               saving
             }
-            className="h-9 px-4 rounded-md text-white font-semibold text-sm shadow-none border-none w-full sm:w-auto disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="h-9 px-4 rounded-md text-[#121212] font-semibold text-sm shadow-none border-none w-full sm:w-auto disabled:opacity-50 inline-flex items-center justify-center gap-2"
             style={{ backgroundColor: "var(--theme-color)" }}
           >
             {saving && <Spinner className="size-3.5" />}
