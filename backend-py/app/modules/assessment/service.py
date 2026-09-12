@@ -11,7 +11,11 @@ from app.db.models.assessments import Assessment, AssessmentQuestion, Assessment
 
 
 async def list_assessments(db: AsyncSession) -> list[Assessment]:
-    result = await db.execute(select(Assessment).order_by(Assessment.created_at.desc()))
+    result = await db.execute(
+        select(Assessment)
+        .options(selectinload(Assessment.questions).selectinload(AssessmentQuestion.options))
+        .order_by(Assessment.created_at.desc())
+    )
     return list(result.scalars().all())
 
 

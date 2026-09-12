@@ -37,6 +37,19 @@ async def _create_assessment_with_mc_question(client, headers) -> dict:
     return response.json()["data"]
 
 
+async def test_list_assessments_returns_questions_and_options(client):
+    headers = await manager_headers()
+    created = await _create_assessment_with_mc_question(client, headers)
+
+    response = await client.get("/api/assessments", headers=headers)
+
+    assert response.status_code == 200, response.text
+    listed = next(a for a in response.json()["data"] if a["id"] == created["id"])
+    assert listed["title"] == "Basic Python Quiz"
+    assert len(listed["questions"]) == 1
+    assert len(listed["questions"][0]["options"]) == 2
+
+
 async def test_invite_reuses_active_attempt_instead_of_duplicating(client):
     headers = await manager_headers()
     job = await create_job(client, headers)
