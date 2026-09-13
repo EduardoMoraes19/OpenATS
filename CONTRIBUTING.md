@@ -36,7 +36,7 @@ Before you start, make sure you have these installed:
 - Node.js (version 22 or higher), [download here](https://nodejs.org/)
 - Python (version 3.11 or higher), [download here](https://www.python.org/downloads/)
 - Git, [download here](https://git-scm.com/)
-- Docker, [download here](https://docs.docker.com/get-docker/) (runs Postgres and Redis locally, no manual DB install needed)
+- Docker, [download here](https://docs.docker.com/get-docker/) (runs Postgres, Redis, and MinIO locally, no manual install needed)
 - Make (usually preinstalled on macOS and Linux, on Windows use WSL)
 - A code editor (VS Code recommended)
 
@@ -88,7 +88,7 @@ make dev
 2. Creates a Python virtualenv at `backend-py/.venv` and installs the backend there
 3. Copies `backend-py/.env.example` and `frontend/.env.example` into real `.env` files, if they don't exist yet
 4. Generates a random `ENCRYPTION_KEY` and `SECRET_KEY` for you, if they're still blank
-5. Starts Postgres and Redis via Docker
+5. Starts Postgres, Redis, and MinIO via Docker
 6. Runs database migrations and seeds the default pipeline stages
 
 `make create-admin` then walks you through creating your first user (email, name,
@@ -97,7 +97,7 @@ login.
 
 `make dev` starts the backend and frontend together.
 
-You'll still need to fill in a few provider credentials by hand afterward, since these are personal secrets nobody can generate for you: Cloudflare R2, Resend, and Gemini.
+Object storage (`R2_*`) already points at the local MinIO container `make setup` starts for you, so file uploads (resumes, company logos) work out of the box - no Cloudflare account needed for local dev. You'll still need to fill in a couple of provider credentials by hand afterward, since these are personal secrets nobody can generate for you: Resend and Gemini.
 
 Prefer to see every step yourself, or something in `make setup` isn't working? The full manual walkthrough is below, and it's also the fallback if you ever need to debug a step individually.
 
@@ -141,7 +141,7 @@ cd ..
 
 ### 1. Start Postgres and Redis with Docker
 
-The backend needs a PostgreSQL database and a Redis instance (used for the CV analysis job queue via arq). A `docker-compose.yml` is provided at the repo root, so you don't need to install or configure either manually:
+The backend needs a PostgreSQL database, a Redis instance (used for the CV analysis job queue via arq), and S3-compatible object storage for file uploads (resumes, company logos). A `docker-compose.yml` is provided at the repo root, so you don't need to install or configure any of them manually:
 
 ```bash
 docker compose up -d
@@ -151,6 +151,7 @@ This starts:
 
 - **Postgres** on `localhost:5432` (user: `openats`, password: `openats`, db: `openats`)
 - **Redis** on `localhost:6379`
+- **MinIO** on `localhost:9000` (S3 API) and `localhost:9001` (web console, login `openats`/`openats12345`) - a `minio-init` container also creates the `openats` bucket automatically and exits; `backend-py/.env.example` already points `R2_*` at it, so uploads work locally with no Cloudflare R2 account. Production swaps those same `R2_*` variables for real Cloudflare R2 credentials (or a self-hosted MinIO with TLS) - the app code doesn't change either way.
 
 Check they're running:
 

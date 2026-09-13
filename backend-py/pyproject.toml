@@ -19,7 +19,6 @@ dependencies = [
     "bcrypt>=4.2",
     "boto3>=1.35",
     "resend>=2.4",
-    "google-genai>=0.3",
     "google-api-python-client>=2.146",
     "google-auth>=2.35",
     "google-auth-oauthlib>=1.2",

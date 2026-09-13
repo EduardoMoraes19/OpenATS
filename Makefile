@@ -4,7 +4,7 @@
 #   make create-admin   create the first super_admin user (interactive)
 #   make dev             start infra + backend + frontend together
 #   make worker            start the CV analysis worker (separate process)
-#   make infra-up            start docker services only (Postgres, Redis)
+#   make infra-up            start docker services only (Postgres, Redis, MinIO)
 #   make infra-down          stop docker services
 #   make migrate              run pending database migrations
 #   make seed                  seed the default pipeline stages
@@ -40,7 +40,7 @@ setup:
 	@$(MAKE) seed
 	@echo ""
 	@echo "🎉 Setup complete. Run 'make create-admin' to create your first user, then 'make dev' to start OpenATS."
-	@echo "   You'll still need to fill in R2_*, RESEND_*, and GEMINI_API_KEY in backend-py/.env by hand."
+	@echo "   Storage (R2_*) is already wired to the local MinIO container. You'll still need to fill in RESEND_* and GEMINI_API_KEY in backend-py/.env by hand."
 
 encryption-key:
 	@command -v openssl >/dev/null 2>&1 || { echo "⚠️  openssl not found, skipping ENCRYPTION_KEY generation. Set it manually."; exit 0; }

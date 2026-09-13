@@ -1,7 +1,7 @@
 """State machine + orchestration for candidate CV analysis, equivalent to
-backend/src/modules/candidate/cv-analysis.service.ts (minus the Gemini
-calls themselves, which live in app/queues/cv_analysis/gemini_client.py,
-and the scoring algorithm, in app/queues/cv_analysis/scoring.py).
+backend/src/modules/candidate/cv-analysis.service.ts (minus the AI calls
+themselves, which live in app/queues/cv_analysis/ai_client.py, and the
+scoring algorithm, in app/queues/cv_analysis/scoring.py).
 
 Called by the arq task (app/queues/cv_analysis/tasks.py), not directly by
 HTTP routes.
@@ -20,10 +20,10 @@ from app.db.models.candidates import CandidateCvAnalysis
 from app.db.models.enums import CvAnalysisStatus
 from app.db.models.jobs import Job, JobSkill
 from app.logging import get_logger
-from app.queues.cv_analysis.gemini_client import (
+from app.queues.cv_analysis.ai_client import (
     generate_ai_summary,
-    parse_cv_with_gemini,
-    parse_jd_with_gemini,
+    parse_cv,
+    parse_jd,
 )
 from app.queues.cv_analysis.scoring import JobRequirements, score_cv
 from app.shared.services import r2_service
@@ -78,7 +78,7 @@ async def _job_requirements(db: AsyncSession, job_id: int) -> tuple[str | None, 
     skills = list(skills_result.scalars().all())
 
     if description:
-        jd = await parse_jd_with_gemini(description)
+        jd = await parse_jd(description)
         requirements = JobRequirements(
             skills=skills,
             min_experience_years=jd["minExperienceYears"],
@@ -98,7 +98,7 @@ async def run_analysis(db: AsyncSession, candidate_id: int, job_id: int, resume_
     pdf_bytes = await asyncio.to_thread(r2_service.download_file, key)
 
     parsed_cv, (description, job_requirements) = await asyncio.gather(
-        parse_cv_with_gemini(pdf_bytes), _job_requirements(db, job_id)
+        parse_cv(pdf_bytes), _job_requirements(db, job_id)
     )
 
     if not parsed_cv.is_cv_or_resume or parsed_cv.confidence < 0.6:

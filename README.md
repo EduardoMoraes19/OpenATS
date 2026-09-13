@@ -89,9 +89,9 @@ Two independent packages - not a monorepo, no shared `package.json` or lockfile.
 | **Backend**         | [FastAPI](https://fastapi.tiangolo.com) (async) · Python · [python-socketio](https://python-socketio.readthedocs.io) for realtime updates                                                   |
 | **Data**            | [SQLAlchemy 2.0](https://www.sqlalchemy.org) (async) + Alembic · PostgreSQL (any Postgres, including the one in `docker-compose.yml`)                                                        |
 | **Jobs**            | [arq](https://arq-docs.helpmanual.io) on Redis - CV analysis runs as its own worker process, not inline with the API                                                                         |
-| **AI**              | [Gemini](https://ai.google.dev) for resume parsing, scoring and candidate summaries                                                                                                          |
+| **AI**              | [OpenRouter](https://openrouter.ai) multi-provider LLM gateway for resume parsing, scoring and candidate summaries - model is swappable via `OPENROUTER_MODEL`, no code change                |
 | **Auth**            | Self-hosted JWT - bcrypt-hashed passwords, HS256-signed access tokens, roles mapped to `super_admin` / `hiring_manager` / `interviewer`                                                      |
-| **Storage**         | Cloudflare R2 (or any S3-compatible bucket) for resumes and attachments                                                                                                                      |
+| **Storage**         | Cloudflare R2 (or any S3-compatible bucket) for resumes and attachments - local dev runs a MinIO container from `docker-compose.yml` instead                                                |
 | **Email**           | [Resend](https://resend.com) for candidate and team notifications                                                                                                                            |
 | **Package manager** | pnpm for `frontend/`, a standard Python virtualenv for `backend-py/`                                                                                                                          |
 
@@ -114,11 +114,11 @@ You need Node.js 22+, Python 3.11+, Docker, and pnpm (`npm install -g pnpm`).
 ```sh
 git clone https://github.com/chamals3n4/OpenATS.git && cd OpenATS
 
-docker compose up -d          # Postgres on :5432, Redis on :6379
+docker compose up -d          # Postgres on :5432, Redis on :6379, MinIO on :9000
 
 cd backend-py
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-cp .env.example .env          # fill in SECRET_KEY, R2_*, RESEND_*, GEMINI_API_KEY
+cp .env.example .env          # R2_* already points at local MinIO; fill in SECRET_KEY, RESEND_*, OPENROUTER_API_KEY
 .venv/bin/alembic upgrade head
 .venv/bin/python -m app.db.seed          # required: seeds the 5 default pipeline stages
 .venv/bin/python -m app.db.create_admin --email you@example.com --password 'SomeStrongPass1!' \
@@ -158,9 +158,9 @@ Each package reads its own `.env` - there's no shared root env file.
 | `SECRET_KEY`                                         | Signs and verifies access tokens - required for almost every route  |
 | `ENCRYPTION_KEY`                                     | Encrypts stored integration credentials                             |
 | `FRONTEND_URL`                                       | Used for CORS and links in outbound emails                          |
-| `R2_*`                                               | Cloudflare R2 (or compatible) object storage for uploaded files     |
+| `R2_*`                                               | Object storage for uploaded files - defaults to the local MinIO container; production points these at Cloudflare R2 (or another S3-compatible bucket) |
 | `RESEND_*`                                           | Transactional email                                                 |
-| `GEMINI_API_KEY`                                     | Powers CV parsing, scoring, and AI summaries                        |
+| `OPENROUTER_API_KEY` / `OPENROUTER_MODEL`            | Powers CV parsing, scoring, and AI summaries via OpenRouter's multi-provider gateway |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` / `GOOGLE_CALENDAR_ID` | Optional - interview scheduling via a Google service account        |
 
 **`frontend/.env`**

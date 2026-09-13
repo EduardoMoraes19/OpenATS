@@ -1,13 +1,13 @@
 """Real tests of the CV analysis pipeline - equivalent to
 cv-analysis.service.ts + worker.ts. Only the scoring math had a test before
 this (test_scoring.py); the actual orchestration (R2 download, the two
-parallel Gemini calls, the not-a-resume rejection, the non-fatal AI summary,
+parallel AI calls, the not-a-resume rejection, the non-fatal AI summary,
 and the arq task's retry/exhaustion policy) had never run in an automated
 test.
 
-Real R2 and Gemini aren't available here, so both are monkeypatched at their
-client boundaries - `r2_service.download_file` and the three
-`gemini_client` functions - the same "swap the external call" pattern used
+Real R2 and the AI gateway aren't available here, so both are monkeypatched
+at their client boundaries - `r2_service.download_file` and the three
+`ai_client` functions - the same "swap the external call" pattern used
 for R2 uploads and the Google OAuth exchange in the other new test files.
 Everything downstream (scoring, persistence, retry bookkeeping) is real.
 """
@@ -81,7 +81,7 @@ def _stub_r2_download(monkeypatch):
 
 async def test_run_analysis_success_persists_score_and_marks_done(client, monkeypatch):
     candidate_id, job_id = await _setup_candidate(client)
-    monkeypatch.setattr(cv_analysis_service, "parse_cv_with_gemini", _async_return(_GOOD_PARSED_CV))
+    monkeypatch.setattr(cv_analysis_service, "parse_cv", _async_return(_GOOD_PARSED_CV))
     monkeypatch.setattr(cv_analysis_service, "generate_ai_summary", _async_return({"quickSummary": "Solid fit."}))
 
     async with async_session_factory() as db:
@@ -99,7 +99,7 @@ async def test_run_analysis_success_persists_score_and_marks_done(client, monkey
 
 async def test_run_analysis_rejects_a_document_that_is_not_a_resume(client, monkeypatch):
     candidate_id, job_id = await _setup_candidate(client)
-    monkeypatch.setattr(cv_analysis_service, "parse_cv_with_gemini", _async_return(_NOT_A_RESUME))
+    monkeypatch.setattr(cv_analysis_service, "parse_cv", _async_return(_NOT_A_RESUME))
 
     with pytest.raises(cv_analysis_service.CvNotAResumeError):
         async with async_session_factory() as db:
@@ -114,10 +114,10 @@ async def test_run_analysis_survives_ai_summary_failure(client, monkeypatch):
     """generate_ai_summary is documented as non-fatal - unlike the CV/JD
     parse calls, which run in the fatal asyncio.gather()."""
     candidate_id, job_id = await _setup_candidate(client)
-    monkeypatch.setattr(cv_analysis_service, "parse_cv_with_gemini", _async_return(_GOOD_PARSED_CV))
+    monkeypatch.setattr(cv_analysis_service, "parse_cv", _async_return(_GOOD_PARSED_CV))
 
     async def _boom(*args, **kwargs):
-        raise RuntimeError("Gemini is down")
+        raise RuntimeError("OpenRouter is down")
 
     monkeypatch.setattr(cv_analysis_service, "generate_ai_summary", _boom)
 
@@ -166,7 +166,7 @@ async def test_task_marks_failed_only_once_retries_are_exhausted(client, monkeyp
 
 async def test_task_success_marks_done(client, monkeypatch):
     candidate_id, job_id = await _setup_candidate(client)
-    monkeypatch.setattr(cv_analysis_service, "parse_cv_with_gemini", _async_return(_GOOD_PARSED_CV))
+    monkeypatch.setattr(cv_analysis_service, "parse_cv", _async_return(_GOOD_PARSED_CV))
     monkeypatch.setattr(cv_analysis_service, "generate_ai_summary", _async_return(None))
 
     await _analyze_cv({"job_try": 1}, candidate_id=candidate_id, job_id=job_id, resume_url=RESUME_URL)

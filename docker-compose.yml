@@ -23,6 +23,41 @@ services:
       - redis-data:/data
     restart: unless-stopped
 
+  # S3-compatible object storage for local dev, so `make setup` works without
+  # real Cloudflare R2 credentials - app/shared/services/r2_service.py talks
+  # to it the same way it talks to R2 in production (same boto3 S3 client).
+  minio:
+    image: quay.io/minio/minio
+    container_name: openats-minio
+    environment:
+      MINIO_ROOT_USER: openats
+      MINIO_ROOT_PASSWORD: openats12345
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # web console
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+
+  # One-shot: creates the `openats` bucket and makes the `logos/` prefix
+  # publicly readable (company logos are served unsigned, unlike resumes -
+  # see r2_service.py's docstring), then exits.
+  minio-init:
+    image: quay.io/minio/mc
+    container_name: openats-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 openats openats12345; do sleep 1; done;
+      mc mb --ignore-existing local/openats;
+      mc anonymous set download local/openats/logos;
+      exit 0;
+      "
+    restart: "no"
+
 volumes:
   postgres-data:
   redis-data:
+  minio-data:

@@ -49,8 +49,9 @@ class Settings(BaseSettings):
     resend_api_key: str = Field(alias="RESEND_API_KEY")
     resend_from_email: str = Field(alias="RESEND_FROM_EMAIL")
 
-    # AI (Gemini)
-    gemini_api_key: str = Field(alias="GEMINI_API_KEY")
+    # AI (OpenRouter - multi-provider gateway, see app/shared/services/ai_gateway.py)
+    openrouter_api_key: str = Field(alias="OPENROUTER_API_KEY")
+    openrouter_model: str = Field(default="google/gemini-2.5-flash", alias="OPENROUTER_MODEL")
 
     # Rate limiting (peripheral, has defaults like the TS code)
     rate_limit_api: int = Field(default=1000, alias="RATE_LIMIT_API")

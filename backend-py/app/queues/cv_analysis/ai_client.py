@@ -1,28 +1,19 @@
-"""Gemini calls for CV/JD parsing and AI summary generation, equivalent to
-the three Gemini invocations in backend/src/modules/candidate/cv-analysis.service.ts.
-
-Model id and 30s timeout are unchanged from the TS code. Responses are
-plain JSON wrapped in markdown code fences by the model - stripped before
-parsing, matching the TS fence-stripping behavior exactly.
+"""CV/JD parsing and AI summary generation for the CV analysis pipeline,
+built on top of the generic multi-provider gateway
+(app/shared/services/ai_gateway.py). This module owns the CV-analysis
+prompts and response parsing; it doesn't know or care which model/provider
+actually answers them - that's OPENROUTER_MODEL's job.
 """
 
 from __future__ import annotations
 
 import json
 
-from google import genai
-from google.genai import types
-
 from app.logging import get_logger
 from app.queues.cv_analysis.scoring import JobRequirements, ParsedCv, ScoreResult, verdict_for_score
-from app.settings import settings
+from app.shared.services import ai_gateway
 
 logger = get_logger(__name__)
-
-_MODEL = "gemini-3-flash-preview"
-_TIMEOUT_MS = 30_000
-
-_client = genai.Client(api_key=settings.gemini_api_key)
 
 _CV_PARSE_PROMPT = """You are analyzing a document that was uploaded as a job application resume/CV.
 
@@ -73,36 +64,20 @@ Score: {score}
 """
 
 
-def _extract_text(response: types.GenerateContentResponse) -> str:
-    """Gemini can return no text at all (e.g. blocked by a safety filter) -
-    fail with a clear message here rather than a cryptic TypeError deep
-    inside _strip_markdown_fences."""
-    if response.text is None:
-        raise RuntimeError("Gemini returned no text in its response")
-    return response.text
-
-
-def _strip_markdown_fences(text: str) -> str:
-    stripped = text.strip()
-    if stripped.startswith("```"):
-        lines = stripped.split("\n")
-        lines = lines[1:] if lines[0].startswith("```") else lines
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        stripped = "\n".join(lines)
-    return stripped.strip()
-
-
-async def parse_cv_with_gemini(pdf_bytes: bytes) -> ParsedCv:
-    response = await _client.aio.models.generate_content(
-        model=_MODEL,
-        contents=[
-            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-            _CV_PARSE_PROMPT,
+async def parse_cv(pdf_bytes: bytes) -> ParsedCv:
+    text = await ai_gateway.complete(
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    ai_gateway.pdf_content_part(filename="resume.pdf", pdf_bytes=pdf_bytes),
+                    {"type": "text", "text": _CV_PARSE_PROMPT},
+                ],
+            }
         ],
-        config=types.GenerateContentConfig(http_options=types.HttpOptions(timeout=_TIMEOUT_MS)),
+        plugins=[ai_gateway.pdf_parser_plugin()],
     )
-    data = json.loads(_strip_markdown_fences(_extract_text(response)))
+    data = json.loads(ai_gateway.strip_markdown_fences(text))
     return ParsedCv(
         document_type=data["documentType"],
         is_cv_or_resume=data["isCvOrResume"],
@@ -117,13 +92,11 @@ async def parse_cv_with_gemini(pdf_bytes: bytes) -> ParsedCv:
     )
 
 
-async def parse_jd_with_gemini(description: str) -> dict:
-    response = await _client.aio.models.generate_content(
-        model=_MODEL,
-        contents=[_JD_PARSE_PROMPT.format(description=description)],
-        config=types.GenerateContentConfig(http_options=types.HttpOptions(timeout=_TIMEOUT_MS)),
+async def parse_jd(description: str) -> dict:
+    text = await ai_gateway.complete(
+        messages=[{"role": "user", "content": _JD_PARSE_PROMPT.format(description=description)}]
     )
-    data = json.loads(_strip_markdown_fences(_extract_text(response)))
+    data = json.loads(ai_gateway.strip_markdown_fences(text))
     return {
         "minExperienceYears": data.get("minExperienceYears", 0),
         "jobLevel": data.get("jobLevel"),
@@ -138,19 +111,20 @@ async def generate_ai_summary(
     analysis still saves without an AI summary."""
     try:
         verdict = verdict_for_score(score.match_score)
-        response = await _client.aio.models.generate_content(
-            model=_MODEL,
-            contents=[
-                _SUMMARY_PROMPT.format(
-                    verdict=verdict,
-                    parsed_cv=parsed_cv,
-                    job_requirements=job_requirements,
-                    score=score.match_score,
-                )
-            ],
-            config=types.GenerateContentConfig(http_options=types.HttpOptions(timeout=_TIMEOUT_MS)),
+        text = await ai_gateway.complete(
+            messages=[
+                {
+                    "role": "user",
+                    "content": _SUMMARY_PROMPT.format(
+                        verdict=verdict,
+                        parsed_cv=parsed_cv,
+                        job_requirements=job_requirements,
+                        score=score.match_score,
+                    ),
+                }
+            ]
         )
-        data = json.loads(_strip_markdown_fences(_extract_text(response)))
+        data = json.loads(ai_gateway.strip_markdown_fences(text))
         data["verdict"] = verdict
         return data
     except Exception:  # noqa: BLE001
